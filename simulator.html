@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tanakh Simulator</title>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-color: #1e293b;
+            --sidebar-bg: #0f172a;
+            --border-color: #334155;
+            --accent-color: #4f46e5;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: white;
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+        }
+
+        /* COMPACT SIDEBAR */
+        .sidebar {
+            background-color: var(--sidebar-bg);
+            width: 70px;
+            /* Compact width */
+            height: 100vh;
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 50;
+            box-shadow: -4px 0 15px rgba(0, 0, 0, 0.3);
+            order: 2;
+            padding-top: 1rem;
+            gap: 1.5rem;
+        }
+
+        .sidebar-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            width: 100%;
+            padding: 0 0.5rem;
+            box-sizing: border-box;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 1rem;
+        }
+
+        .sidebar-group:last-child {
+            border-bottom: none;
+        }
+
+        .group-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            text-align: center;
+            font-weight: 700;
+        }
+
+        /* ICON BUTTONS */
+        .icon-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+        }
+
+        .icon-btn.active {
+            background: var(--accent-color);
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* TOOLTIP */
+        .icon-btn::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            right: 120%;
+            /* Show to left of sidebar */
+            top: 50%;
+            transform: translateY(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+
+        .icon-btn:hover::after {
+            opacity: 1;
+        }
+
+        /* Device Selector (Dropdown) - Keep overlay or modal? 
+           For compact sidebar, easier to have a button that cycles or opens a mini menu.
+           Let's use a mini popout for device selection.
+        */
+        .popover-container {
+            position: relative;
+        }
+
+        .popover {
+            position: absolute;
+            right: 120%;
+            top: 0;
+            background: #1e293b;
+            border: 1px solid var(--border-color);
+            padding: 0.5rem;
+            border-radius: 8px;
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            width: 200px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 90;
+        }
+
+        .popover.visible {
+            display: flex;
+        }
+
+        .popover-item {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .popover-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .popover-item.selected {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+
+        /* CANVAS */
+        .canvas-wrapper {
+            flex: 1;
+            order: 1;
+            overflow: auto;
+            position: relative;
+            background-color: #0f172a;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 50px;
+        }
+
+        .zoom-layer {
+            transition: transform 0.2s ease-out;
+            transform-origin: center center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .device-label {
+            display: none;
+        }
+
+        .device-frame {
+            background: #fff;
+            position: relative;
+            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.6);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .device-frame iframe {
+            flex: 1;
+            border: none;
+            display: block;
+        }
+
+        /* BROWSER BAR */
+        .browser-bar {
+            background: #f1f5f9;
+            color: #334155;
+            padding: 8px 12px;
+            display: none;
+            /* Hidden by default */
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid #e2e8f0;
+            font-family: -apple-system, sans-serif;
+            flex-shrink: 0;
+            transition: height 0.3s;
+        }
+
+        .browser-bar.visible {
+            display: flex;
+        }
+
+        .url-bar {
+            background: white;
+            flex: 1;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            color: #64748b;
+        }
+
+        .lock-icon {
+            width: 10px;
+            height: 10px;
+        }
+
+        /* DEVICE STYLES */
+        .notch {
+            position: absolute;
+            background: #000;
+            z-index: 20;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .punch-hole {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background: #000;
+            border-radius: 50%;
+            z-index: 20;
+            opacity: 0;
+        }
+
+        .range-slider-container {
+            background: #1e293b;
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 8px;
+            position: absolute;
+            right: 120%;
+            top: 0;
+            width: 180px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 90;
+        }
+
+        .range-slider-container.visible {
+            display: flex;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .val-text {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        /* ANDROID NAV BAR */
+        .android-nav-bar {
+            background: #000;
+            height: 48px;
+            display: none;
+            align-items: center;
+            justify-content: space-around;
+            flex-shrink: 0;
+            padding: 0 20px;
+        }
+
+        .android-nav-bar.visible {
+            display: flex;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #94a3b8;
+            border-radius: 4px;
+            /* Square by default */
+        }
+
+        .nav-icon.circle {
+            border-radius: 50%;
+            border: none;
+            background: #94a3b8;
+            width: 16px;
+            height: 16px;
+        }
+
+        .nav-icon.triangle {
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 20px solid #94a3b8;
+            border-top: none;
+            background: transparent;
+            transform: rotate(-90deg);
+            border-radius: 2px;
+        }
+
+        .nav-icon.square {
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- COMPACT SIDEBAR -->
+    <div class="sidebar">
+
+        <!-- View Mode -->
+        <div class="sidebar-group">
+            <div class="group-label">Device</div>
+            <button class="icon-btn active" id="btn-mobile" onclick="switchView('mobile')" data-tooltip="Mobile">
+                <i data-lucide="smartphone" width="20"></i>
+            </button>
+            <button class="icon-btn" id="btn-tablet" onclick="switchView('tablet')" data-tooltip="Tablet">
+                <i data-lucide="tablet" width="20"></i>
+            </button>
+            <button class="icon-btn" id="btn-desktop" onclick="switchView('desktop')" data-tooltip="Desktop">
+                <i data-lucide="monitor" width="20"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Model Select -->
+        <div class="sidebar-group" id="mobile-controls-group">
+            <div class="group-label">Model</div>
+            <div class="popover-container">
+                <button class="icon-btn" onclick="togglePopover('model-popover')" data-tooltip="Select Model">
+                    <i data-lucide="smartphone-nfc" width="20"></i>
+                </button>
+                <div class="popover" id="model-popover">
+                    <button class="popover-item" onclick="selectModel('s25ultra')">Samsung S25 Ultra</button>
+                    <button class="popover-item" onclick="selectModel('iphone15promax')">iPhone 15 Pro Max</button>
+                    <button class="popover-item" onclick="selectModel('pixel8')">Google Pixel 8</button>
+                    <button class="popover-item" onclick="selectModel('iphone15')">iPhone 15</button>
+                    <button class="popover-item" onclick="selectModel('iphonese')">iPhone SE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Options -->
+        <div class="sidebar-group" id="options-group">
+            <div class="group-label">Tools</div>
+
+            <button class="icon-btn" id="btn-browser-ui" onclick="toggleBrowserUI()" data-tooltip="Toggle Browser UI">
+                <i data-lucide="layout-template" width="20"></i>
+            </button>
+
+            <button class="icon-btn" id="btn-android-nav" onclick="toggleAndroidNav()" data-tooltip="Android Nav Bar">
+                <i data-lucide="navigation" width="20"></i>
+            </button> <!-- NEW BUTTON -->
+
+            <div class="popover-container">
+                <button class="icon-btn" onclick="togglePopover('calib-popover')" data-tooltip="Calibrate Size">
+                    <i data-lucide="ruler" width="20"></i>
+                </button>
+                <div class="range-slider-container" id="calib-popover">
+                    <span style="font-size:0.8rem; font-weight:bold;">PPI Calibration</span>
+                    <input type="range" min="0.5" max="2.0" step="0.01" value="1.0"
+                        oninput="updateCalibration(this.value)">
+                    <span class="val-text" id="calib-val">Scale: 1.00x</span>
+                    <button onclick="setCalibration(1.0)"
+                        style="font-size:0.7rem; padding:4px; background:rgba(255,255,255,0.1); border:none; color:white; border-radius:4px; cursor:pointer;">Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zoom -->
+        <div class="sidebar-group">
+            <div class="group-label">Zoom</div>
+            <button class="icon-btn" onclick="adjustZoom(0.1)" data-tooltip="Zoom In (+)">
+                <i data-lucide="plus" width="20"></i>
+            </button>
+            <span id="zoom-text" style="font-size:0.7rem; font-weight:bold;">100%</span>
+            <button class="icon-btn" onclick="adjustZoom(-0.1)" data-tooltip="Zoom Out (-)">
+                <i data-lucide="minus" width="20"></i>
+            </button>
+            <button class="icon-btn" onclick="fitToScreen()" data-tooltip="Fit to Screen">
+                <i data-lucide="maximize" width="20"></i>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- MAIN CANVAS -->
+    <div class="canvas-wrapper" id="canvas-area">
+        <div class="zoom-layer" id="zoom-layer">
+            <div class="device-label" id="main-label">
+                <i data-lucide="smartphone" width="16"></i> Samsung S25 Ultra
+            </div>
+
+            <div style="display:flex; flex-direction:column; align-items:center;">
+                <div class="device-frame" id="main-frame">
+                    <div class="notch" id="notch"></div>
+                    <div class="punch-hole" id="punch-hole"></div>
+
+                    <!-- BROWSER TOP BAR -->
+                    <div class="browser-bar" id="browser-bar">
+                        <i data-lucide="home" width="16"></i>
+                        <div class="url-bar">
+                            <i data-lucide="lock" width="10"></i>
+                            localhost:3000
+                        </div>
+                        <i data-lucide="more-vertical" width="16"></i>
+                    </div>
+
+                    <iframe src="/" id="app-frame"></iframe>
+
+                    <!-- ANDROID NAV BAR -->
+                    <div class="android-nav-bar" id="android-nav-bar">
+                        <div class="nav-icon triangle"
+                            style="transform: rotate(-90deg); border-width: 0 8px 16px 8px; border-color: transparent transparent #94a3b8 transparent;">
+                        </div>
+                        <div class="nav-icon circle"></div>
+                        <div class="nav-icon square"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        let currentZoom = 1;
+        let calibrationScale = 1;
+        let currentMode = 'mobile';
+        let currentDevice = 's25ultra';
+        let browserVisible = false;
+        let navBarVisible = false; // NEW STATE
+
+        const devices = {
+            's25ultra': { w: 412, h: 915, r: 2, type: 'punchhole', label: 'Samsung S25 Ultra' },
+            'iphone15promax': { w: 430, h: 932, r: 44, type: 'island', label: 'iPhone 15 Pro Max' },
+            'pixel8': { w: 412, h: 915, r: 24, type: 'punchhole', label: 'Google Pixel 8' },
+            'iphone15': { w: 393, h: 852, r: 40, type: 'island', label: 'iPhone 15' },
+            'iphonese': { w: 375, h: 667, r: 0, type: 'none', label: 'iPhone SE' }
+        };
+
+        function switchView(mode) {
+            currentMode = mode;
+
+            // Highlight Button
+            document.querySelectorAll('#btn-mobile, #btn-tablet, #btn-desktop').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('btn-' + mode).classList.add('active');
+
+            // Show/Hide Mobile Controls
+            const mobGroup = document.getElementById('mobile-controls-group');
+            const browserBtn = document.getElementById('btn-browser-ui');
+            const navBtn = document.getElementById('btn-android-nav'); // NEW
+
+            mobGroup.style.display = (mode === 'mobile') ? 'flex' : 'none';
+            browserBtn.style.display = (mode === 'mobile') ? 'flex' : 'none';
+            navBtn.style.display = (mode === 'mobile') ? 'flex' : 'none'; // NEW
+
+            // Frame config
+            const labelEl = document.getElementById('main-label');
+            const frame = document.getElementById('main-frame');
+
+            toggleHardware('none'); // reset first
+
+            if (mode === 'mobile') {
+                // Re-apply selected mobile model
+                applyMobileSpecs(currentDevice);
+                if (browserVisible) document.getElementById('browser-bar').classList.add('visible');
+                if (navBarVisible) document.getElementById('android-nav-bar').classList.add('visible'); // NEW
+            } else if (mode === 'tablet') {
+                document.getElementById('browser-bar').classList.remove('visible'); // No browser bar for tablet sim for now
+                document.getElementById('android-nav-bar').classList.remove('visible'); // Hide on non-mobile
+                labelEl.innerHTML = '<i data-lucide="tablet" width="16"></i> Tablet (768x1024)';
+                lucide.createIcons();
+                frame.style.width = '768px';
+                frame.style.height = '1024px';
+                frame.style.borderRadius = '24px';
+                fitToScreen();
+            } else if (mode === 'desktop') {
+                document.getElementById('browser-bar').classList.remove('visible');
+                document.getElementById('android-nav-bar').classList.remove('visible'); // Hide on non-mobile
+                labelEl.innerHTML = '<i data-lucide="monitor" width="16"></i> Desktop (1280x800)';
+                lucide.createIcons();
+                frame.style.width = '1280px';
+                frame.style.height = '800px';
+                frame.style.borderRadius = '12px';
+                fitToScreen();
+            }
+        }
+
+        function selectModel(deviceId) {
+            currentDevice = deviceId;
+            applyMobileSpecs(deviceId);
+            togglePopover('model-popover'); // Close menu
+        }
+
+        function applyMobileSpecs(deviceId) {
+            if (currentMode !== 'mobile') return;
+            const spec = devices[deviceId];
+            const frame = document.getElementById('main-frame');
+            const labelEl = document.getElementById('main-label');
+
+            frame.style.width = spec.w + 'px';
+            frame.style.height = spec.h + 'px';
+            frame.style.borderRadius = spec.r + 'px';
+
+            labelEl.innerHTML = `<i data-lucide="smartphone" width="16"></i> ${spec.label} (${spec.w}x${spec.h})`;
+            lucide.createIcons();
+
+            toggleHardware(spec.type);
+
+            setTimeout(fitToScreenIfTooBig, 100);
+        }
+
+        function fitToScreenIfTooBig() {
+            // Only auto-fit if it clearly overflows viewport
+            const frame = document.getElementById('main-frame');
+            if (window.innerHeight < parseFloat(frame.style.height) + 100) {
+                fitToScreen();
+            }
+        }
+
+        function toggleHardware(type) {
+            const notch = document.getElementById('notch');
+            const punch = document.getElementById('punch-hole');
+            notch.style.opacity = '0';
+            punch.style.opacity = '0';
+
+            if (type === 'punchhole') {
+                punch.style.opacity = '1';
+                // push down browser bar if active? No, usually browser bar is below status bar area.
+            } else if (type === 'island') {
+                notch.style.width = '120px';
+                notch.style.height = '35px';
+                notch.style.borderRadius = '20px';
+                notch.style.top = '12px';
+                notch.style.left = '50%';
+                notch.style.opacity = '1';
+            }
+        }
+
+        function toggleBrowserUI() {
+            browserVisible = !browserVisible;
+            const bar = document.getElementById('browser-bar');
+            const btn = document.getElementById('btn-browser-ui');
+
+            if (browserVisible) {
+                bar.classList.add('visible');
+                btn.classList.add('active');
+            } else {
+                bar.classList.remove('visible');
+                btn.classList.remove('active');
+            }
+        }
+
+        /* POPOVER LOGIC */
+        function togglePopover(id) {
+            const el = document.getElementById(id);
+            const isVis = el.classList.contains('visible');
+            // Hide all first
+            document.querySelectorAll('.popover, .range-slider-container').forEach(p => p.classList.remove('visible'));
+
+            if (!isVis) el.classList.add('visible');
+        }
+
+        /* ZOOM & CALIBRATION LOGIC */
+        function updateCalibration(val) {
+            calibrationScale = parseFloat(val);
+            document.getElementById('calib-val').textContent = `Scale: ${calibrationScale.toFixed(2)}x`;
+            applyZoom();
+        }
+
+        function setCalibration(val) {
+            document.querySelector('input[type=range]').value = val;
+            updateCalibration(val);
+        }
+
+        function setZoom(val) {
+            currentZoom = val;
+            applyZoom();
+        }
+
+        function adjustZoom(delta) {
+            currentZoom = Math.max(0.1, Math.min(3.0, currentZoom + delta));
+            applyZoom();
+        }
+
+        function applyZoom() {
+            // Total zoom = UserZoom * Calibration
+            const totalScale = currentZoom * calibrationScale;
+            document.getElementById('zoom-text').textContent = Math.round(currentZoom * 100) + '%';
+            document.getElementById('zoom-layer').style.transform = `scale(${totalScale})`;
+        }
+
+        function fitToScreen() {
+            const frame = document.getElementById('main-frame');
+            setTimeout(() => {
+                let w = parseFloat(frame.style.width);
+                let h = parseFloat(frame.style.height);
+
+                const container = document.getElementById('canvas-area');
+                const scale = Math.min(
+                    (container.clientWidth - 80) / w,
+                    (container.clientHeight - 80) / h,
+                    1
+                );
+                currentZoom = scale;
+                applyZoom(); // this applies calibration as well! 
+            }, 50);
+        }
+
+        function toggleAndroidNav() {
+            navBarVisible = !navBarVisible;
+            const bar = document.getElementById('android-nav-bar');
+            const btn = document.getElementById('btn-android-nav');
+
+            if (navBarVisible) {
+                bar.classList.add('visible');
+                btn.classList.add('active');
+            } else {
+                bar.classList.remove('visible');
+                btn.classList.remove('active');
+            }
+        }
+
+        // Init
+        switchView('mobile');
+        selectModel('s25ultra');
+
+    </script>
+</body>
+
+</html>
