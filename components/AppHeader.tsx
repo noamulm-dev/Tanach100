@@ -130,17 +130,17 @@ const AppHeader: React.FC<Props> = ({
                 {isReaderMode ? (
                     <>
                         {/* Book Selector */}
-                        <div className="w-[85px] shrink-0 h-full border-l border-current/10 overflow-hidden relative z-20">
+                        <div className="w-[95px] shrink-0 h-full border-l border-current/10 overflow-hidden relative z-20">
                             <WithHelp labelKey="label_book_selector" position="bottom" className="w-full h-full">
                                 <button
                                     onClick={openBookModal}
                                     className={`flex flex-col justify-center items-start gap-0 px-2 w-full h-full transition-colors text-right border-none active:bg-black/5 dark:active:bg-white/5 ${selectClass}`}
                                 >
-                                    <span className="font-black text-[18px] leading-[0.9] whitespace-nowrap overflow-hidden text-ellipsis w-full -mb-0.5 tracking-tight">
+                                    <span className="font-black text-[20px] leading-[0.9] whitespace-nowrap overflow-hidden text-ellipsis w-full -mb-0.5 tracking-tight">
                                         {selectedBook ? getBookName(selectedBook.id) : t('select_book_title')}
                                     </span>
                                     {selectedBook && (
-                                        <span className={`font-bold text-[12px] leading-none ${hoveredVerse ? 'text-indigo-500 font-black' : 'opacity-70'}`}>
+                                        <span className={`font-bold text-[14px] leading-none ${hoveredVerse ? 'text-indigo-500 font-black' : 'opacity-70'}`}>
                                             {language === 'he'
                                                 ? hoveredVerse
                                                     ? `${numberToHebrew(hoveredVerse.chapter)}:${numberToHebrew(hoveredVerse.verse)}`
