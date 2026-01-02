@@ -47,6 +47,7 @@ interface Props {
     onSearchRequest: (text: string) => void;
     scrollSignal?: { ts: number, chapter: number, verse: number } | null;
     onVerseHover?: (chapter: number, verse: number) => void;
+    onVerseLeave?: () => void;
 }
 
 type MenuMenuView = 'main' | 'commentary';
@@ -73,7 +74,8 @@ const BibleReader = forwardRef<BibleReaderHandle, Props>(({
     onAddBookmark,
     onSearchRequest,
     scrollSignal,
-    onVerseHover
+    onVerseHover,
+    onVerseLeave
 }, ref) => {
     const { t, getBookName, language, dir } = useLanguage();
     const [fullBookData, setFullBookData] = useState<Verse[][]>([]);
@@ -394,7 +396,7 @@ const BibleReader = forwardRef<BibleReaderHandle, Props>(({
                                     <div className={`${activeTheme.textMain} w-full`} style={{ fontFamily: readerStyle.fontFamily, fontSize: `${readerStyle.fontSize * 1.5}rem`, lineHeight: readerStyle.lineHeight, textAlign: readerStyle.textAlign }}>
                                         {verses.map(v => {
                                             globalVerseCounter++;
-                                            return <VerseItem key={v.verse} verse={v} chapterNum={index + 1} readerStyle={readerStyle} activeTheme={activeTheme} isReading={ttsVerse?.chapter === index + 1 && ttsVerse?.verse === v.verse} ttsHighlight={isDarkMode ? 'bg-orange-500/20' : 'bg-orange-200'} verseHover={activeTheme.hover} globalVerseCounter={globalVerseCounter} activeResult={activeResult} searchQuery={searchQuery} searchWholeWord={searchWholeWord} isRegularSearchActive={isRegularSearchActive} elsIndices={currentElsHighlights?.get(`${index + 1}_${v.verse}`)} onContextMenu={(e) => { e.preventDefault(); const selectedText = window.getSelection()?.toString().trim(); setContextMenu({ x: e.clientX, y: e.clientY, verse: v, selectedText }); }} onMouseEnter={() => { if (onVerseHover) onVerseHover(index + 1, v.verse); }} />;
+                                            return <VerseItem key={v.verse} verse={v} chapterNum={index + 1} readerStyle={readerStyle} activeTheme={activeTheme} isReading={ttsVerse?.chapter === index + 1 && ttsVerse?.verse === v.verse} ttsHighlight={isDarkMode ? 'bg-orange-500/20' : 'bg-orange-200'} verseHover={activeTheme.hover} globalVerseCounter={globalVerseCounter} activeResult={activeResult} searchQuery={searchQuery} searchWholeWord={searchWholeWord} isRegularSearchActive={isRegularSearchActive} elsIndices={currentElsHighlights?.get(`${index + 1}_${v.verse}`)} onContextMenu={(e) => { e.preventDefault(); const selectedText = window.getSelection()?.toString().trim(); setContextMenu({ x: e.clientX, y: e.clientY, verse: v, selectedText }); }} onMouseEnter={() => { if (onVerseHover) onVerseHover(index + 1, v.verse); }} onMouseLeave={() => { if (onVerseLeave) onVerseLeave(); }} />;
                                         })}
                                     </div>
                                 </article>
