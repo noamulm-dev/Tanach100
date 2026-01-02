@@ -88,7 +88,7 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
         : (isDarkMode ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-500 hover:bg-indigo-50 hover:text-indigo-600')}`;
 
     return (
-        <div className={`fixed inset-0 z-[60] flex flex-row-reverse ${isDarkMode ? 'bg-slate-950' : 'bg-slate-100'} animate-in fade-in duration-200`}>
+        <div className={`fixed inset-0 z-[60] flex flex-row ${isDarkMode ? 'bg-slate-950' : 'bg-slate-100'} animate-in fade-in duration-200`}>
 
             {/* Narrow Sidebar (Right Side) */}
             <div className={`w-20 shrink-0 flex flex-col items-center py-4 gap-4 border-l ${sidebarClass} shadow-xl z-20`}>
