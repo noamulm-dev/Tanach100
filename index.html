@@ -1,0 +1,86 @@
+
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>תנ״ך 3D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Assistant', 'sans-serif'],
+                        serif: ['Frank Ruhl Libre', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Alef:wght@400;700&family=Amatic+SC:wght@400;700&family=Assistant:wght@200;300;400;500;600;700&family=Bellefair&family=Bona+Nova:wght@400;700&family=David+Libre:wght@400;500;700&family=Frank+Ruhl+Libre:wght@400;500;700&family=Fredoka:wght@300;400;500;600;700&family=Heebo:wght@300;400;500;700&family=IBM+Plex+Sans+Hebrew:wght@400;700&family=Karantina:wght@400;700&family=Miriam+Libre:wght@400;700&family=Noto+Sans+Hebrew:wght@300;400;500;700&family=Noto+Serif+Hebrew:wght@300;400;500;700&family=Rubik:wght@300;400;500;700&family=Secular+One&family=Solitreo&family=Suez+One&family=Tinos:wght@400;700&family=Varela+Round&display=swap" rel="stylesheet" crossorigin="anonymous">
+    <style>
+        body {
+            font-family: 'Assistant', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .bible-font {
+            font-family: 'Frank Ruhl Libre', serif;
+        }
+        /* Custom scrollbar for better mobile appearance */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        
+        /* Light Mode Defaults */
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; /* Slate 100 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #64748b; /* Slate 500 - Visible Grey */
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; /* Slate 600 */
+        }
+
+        /* Dark mode scrollbar overrides */
+        html.dark ::-webkit-scrollbar-track {
+            background: #0f172a; /* Slate 900 */
+        }
+        html.dark ::-webkit-scrollbar-thumb {
+            background: #475569; /* Slate 600 - Lighter than track to be visible */
+            border-radius: 5px;
+        }
+        html.dark ::-webkit-scrollbar-thumb:hover {
+            background: #64748b; /* Slate 500 */
+        }
+
+        /* Utility to hide scrollbar but keep functionality */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="overflow-x-hidden">
+    <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
