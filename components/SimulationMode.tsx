@@ -49,6 +49,13 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
     const width = orientation === 'portrait' ? current.w : current.h;
     const height = orientation === 'portrait' ? current.h : current.w;
 
+    // Browser Interface Dimensions (approximate for realism)
+    const browserTopBarHeight = (activeDevice === 'mobile' && orientation === 'portrait') ? 60 : 0; // Address Bar
+    const browserBottomBarHeight = (activeDevice === 'mobile' && orientation === 'portrait') ? 48 : 0; // Nav Bar / Tab Bar
+
+    // Effective App Viewport
+    const appHeight = height - browserTopBarHeight - browserBottomBarHeight;
+
     return (
         <div className={`fixed inset-0 z-[60] flex flex-col ${isDarkMode ? 'bg-slate-950' : 'bg-slate-100'} animate-in fade-in duration-200`}>
             {/* Control Bar */}
@@ -60,7 +67,7 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
                         </div>
                         <div>
                             <h2 className={`font-bold text-lg leading-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Device Simulator</h2>
-                            <p className={`text-[10px] uppercase tracking-wider font-bold ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Responsive Check</p>
+                            <p className={`text-[10px] uppercase tracking-wider font-bold ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Browser & UI Check</p>
                         </div>
                     </div>
 
@@ -141,22 +148,46 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-xl z-20 pointer-events-none"></div>
                         )}
 
+                        {/* Browser Address Bar Simulation */}
+                        {browserTopBarHeight > 0 && (
+                            <div className="w-full bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 flex items-center gap-3" style={{ height: browserTopBarHeight }}>
+                                <div className="flex items-center gap-1.5 text-slate-500">
+                                    <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+                                    <div className="w-2 h-2 rounded-full bg-slate-400 opacity-50"></div>
+                                </div>
+                                <div className="flex-1 bg-white dark:bg-slate-900 h-8 rounded-lg flex items-center justify-center shadow-sm">
+                                    <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                                        🔒 {appUrl.replace(/https?:\/\//, '')}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
                         <iframe
                             src={appUrl}
                             title="Device Simulation"
                             className="bg-white transition-all duration-500"
                             style={{
                                 width: `${width}px`,
-                                height: `${height}px`,
+                                height: `${appHeight}px`,
                                 border: 'none',
                                 userSelect: 'none'
                             }}
                         />
+
+                        {/* Browser Bottom Bar Simulation */}
+                        {browserBottomBarHeight > 0 && (
+                            <div className="w-full bg-slate-100 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-center justify-around px-4" style={{ height: browserBottomBarHeight }}>
+                                <div className="w-6 h-6 rounded-full border-2 border-slate-400 opacity-50"></div> {/* Homeish */}
+                                <div className="w-24 h-1 rounded-full bg-slate-900 dark:bg-white opacity-20"></div> {/* Swipe Indicator */}
+                                <div className="w-4 h-4 border-l-2 border-b-2 border-slate-400 rotate-45 opacity-50"></div> {/* Backish */}
+                            </div>
+                        )}
                     </div>
 
                     {/* Device Dimensions Label */}
                     <div className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-md text-white/90 text-xs font-mono font-bold flex flex-col items-center">
-                        <span>{width}px × {height}px</span>
+                        <span>{width}px × {appHeight}px (Available Viewport)</span>
                         {activeDevice === 'mobile' && <span className="opacity-70 text-[10px]">{mobileModels[activeMobileModel].label}</span>}
                     </div>
                 </div>
