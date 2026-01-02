@@ -14,7 +14,8 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
     const [activeMobileModel, setActiveMobileModel] = React.useState<string>('s25ultra');
 
     // Zoom State
-    const [zoom, setZoom] = React.useState<number>(1);
+    const [zoom, setZoom] = React.useState<number>(0.85); // Default start zoom
+    const containerRef = React.useRef<HTMLDivElement>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
     const mobileModels: Record<string, { w: number, h: number, label: string }> = {
@@ -61,12 +62,28 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
     const appHeight = height - browserTopBarHeight - browserBottomBarHeight;
 
     const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2));
-    const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
-    const handleFit = () => setZoom(1); // Reset to 100% for now, could calculate fit later
+    const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.2));
+
+    const handleFit = () => {
+        if (containerRef.current) {
+            const containerW = containerRef.current.clientWidth - 80; // padding
+            const containerH = containerRef.current.clientHeight - 80;
+            const deviceW = width + (activeDevice === 'mobile' ? 24 : activeDevice === 'tablet' ? 24 : 24); // frame approx
+            const deviceH = height + (activeDevice === 'mobile' ? 24 : activeDevice === 'tablet' ? 24 : 32);
+
+            const scale = Math.min(containerW / deviceW, containerH / deviceH);
+            setZoom(Math.min(scale, 1.5)); // Don't zoom in crazy amounts if space is huge
+        }
+    };
+
+    // Auto fit on device change
+    React.useEffect(() => {
+        handleFit();
+    }, [activeDevice, orientation, activeMobileModel]);
 
     // Classes
     const sidebarClass = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
-    const btnClass = (active: boolean) => `p-3 rounded-xl transition-all relative group ${active
+    const btnClass = (active: boolean) => `p-3 rounded-xl transition-all relative group shrink-0 ${active
         ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
         : (isDarkMode ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-500 hover:bg-indigo-50 hover:text-indigo-600')}`;
 
@@ -74,13 +91,13 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
         <div className={`fixed inset-0 z-[60] flex flex-row-reverse ${isDarkMode ? 'bg-slate-950' : 'bg-slate-100'} animate-in fade-in duration-200`}>
 
             {/* Narrow Sidebar (Right Side) */}
-            <div className={`w-20 shrink-0 flex flex-col items-center py-6 gap-6 border-l ${sidebarClass} shadow-xl z-20`}>
+            <div className={`w-20 shrink-0 flex flex-col items-center py-4 gap-4 border-l ${sidebarClass} shadow-xl z-20`}>
 
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className={`p-3 rounded-full transition-colors mb-4 ${isDarkMode ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                    title="Close Simulator"
+                    className={`p-3 rounded-full transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                    title="Close"
                 >
                     <X size={24} />
                 </button>
@@ -88,39 +105,49 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
                 <div className={`h-px w-10 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-200'}`}></div>
 
                 {/* Device Type Icons */}
-                <div className="flex flex-col gap-4 w-full px-2">
+                <div className="flex flex-col gap-3 w-full px-2 overflow-y-auto custom-scrollbar flex-1 items-center">
 
-                    {/* Mobile (with Flyout) */}
-                    <div className="relative flex justify-center">
-                        <button
-                            onClick={() => { setActiveDevice('mobile'); setIsMobileMenuOpen(!isMobileMenuOpen); }}
-                            className={btnClass(activeDevice === 'mobile')}
-                            title="Mobile"
-                        >
-                            <Smartphone size={28} strokeWidth={activeDevice === 'mobile' ? 2.5 : 2} />
-                        </button>
+                    <button
+                        onClick={() => setActiveDevice('mobile')}
+                        className={btnClass(activeDevice === 'mobile')}
+                        title="Mobile"
+                    >
+                        <Smartphone size={28} strokeWidth={activeDevice === 'mobile' ? 2.5 : 2} />
+                    </button>
 
-                        {/* Mobile Models Flyout */}
-                        {isMobileMenuOpen && (
-                            <div className={`absolute right-full top-0 mr-4 w-56 p-2 rounded-xl border shadow-2xl animate-in fade-in slide-in-from-right-4 z-50 ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-                                <div className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider mb-1 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Select Model</div>
-                                <div className="flex flex-col gap-1">
-                                    {Object.entries(mobileModels).map(([key, model]) => (
-                                        <button
-                                            key={key}
-                                            onClick={() => { setActiveMobileModel(key); setActiveDevice('mobile'); setIsMobileMenuOpen(false); }}
-                                            className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold text-right transition-colors ${activeMobileModel === key
-                                                ? 'bg-indigo-600 text-white'
-                                                : (isDarkMode ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-50')
-                                                }`}
-                                        >
-                                            {model.label}
-                                        </button>
-                                    ))}
+                    {/* Separate Model Selector Button (Visible only when Mobile is active) */}
+                    {activeDevice === 'mobile' && (
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                className={`p-2 rounded-lg text-xs font-bold border ${isMobileMenuOpen ? 'border-indigo-500 text-indigo-500' : (isDarkMode ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-600')}`}
+                                title="Select Model"
+                            >
+                                Model
+                            </button>
+
+                            {/* Mobile Models Flyout */}
+                            {isMobileMenuOpen && (
+                                <div className={`absolute right-full top-0 mr-4 w-56 p-2 rounded-xl border shadow-2xl animate-in fade-in slide-in-from-right-4 z-50 ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                                    <div className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider mb-1 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Select Model</div>
+                                    <div className="flex flex-col gap-1">
+                                        {Object.entries(mobileModels).map(([key, model]) => (
+                                            <button
+                                                key={key}
+                                                onClick={() => { setActiveMobileModel(key); setIsMobileMenuOpen(false); }}
+                                                className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold text-right transition-colors ${activeMobileModel === key
+                                                    ? 'bg-indigo-600 text-white'
+                                                    : (isDarkMode ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-50')
+                                                    }`}
+                                            >
+                                                {model.label}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                        </div>
+                    )}
 
                     <button
                         onClick={() => setActiveDevice('tablet')}
@@ -137,30 +164,39 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
                     >
                         <Monitor size={28} strokeWidth={activeDevice === 'desktop' ? 2.5 : 2} />
                     </button>
+
+                    <div className={`h-px w-10 my-2 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-200'}`}></div>
+
+                    {/* Orientation Toggle */}
+                    {activeDevice !== 'desktop' && (
+                        <button
+                            onClick={() => setOrientation(o => o === 'portrait' ? 'landscape' : 'portrait')}
+                            className={btnClass(false)}
+                            title="Rotate"
+                        >
+                            <div className={`transition-transform duration-300 ${orientation === 'landscape' ? 'rotate-90' : 'rotate-0'}`}>
+                                <Smartphone size={24} />
+                            </div>
+                        </button>
+                    )}
                 </div>
 
-                <div className={`h-px w-10 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-200'}`}></div>
+                {/* Bottom Controls */}
+                <div className="mt-auto flex flex-col gap-2 pt-4 w-full items-center border-t border-slate-800/10 dark:border-slate-100/10">
+                    {/* Size Info in Sidebar */}
+                    <div className="text-[10px] font-mono text-center flex flex-col opacity-50 mb-2">
+                        <span>{width}x{appHeight}</span>
+                        {activeDevice === 'mobile' && <span>{mobileModels[activeMobileModel].label.split(' ')[0]}</span>}
+                    </div>
 
-                {/* Orientation Toggle */}
-                {activeDevice !== 'desktop' && (
-                    <button
-                        onClick={() => setOrientation(o => o === 'portrait' ? 'landscape' : 'portrait')}
-                        className={btnClass(false)}
-                        title="Rotate Orientation"
-                    >
-                        <div className={`transition-transform duration-300 ${orientation === 'landscape' ? 'rotate-90' : 'rotate-0'}`}>
-                            <Smartphone size={24} />
-                        </div>
-                    </button>
-                )}
-
-                <div className="mt-auto flex flex-col gap-2">
                     <button onClick={handleZoomIn} className={btnClass(false)} title="Zoom In">
                         <ZoomIn size={24} />
                     </button>
-                    <button onClick={handleFit} className={`text-xs font-black ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {Math.round(zoom * 100)}%
+
+                    <button onClick={handleFit} className={`p-2 text-xs font-black uppercase tracking-wider rounded-lg border ${isDarkMode ? 'border-slate-700 text-slate-400 hover:text-white' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}`} title="Fit to Screen">
+                        FIT
                     </button>
+
                     <button onClick={handleZoomOut} className={btnClass(false)} title="Zoom Out">
                         <ZoomOut size={24} />
                     </button>
@@ -168,20 +204,20 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
             </div>
 
             {/* Canvas Area */}
-            <div className="flex-1 overflow-hidden flex items-center justify-center bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-opacity-5 relative">
+            <div className="flex-1 overflow-hidden flex items-center justify-center bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-opacity-5 relative" ref={containerRef}>
 
                 {/* Scrollable Container with Zoom */}
                 <div
-                    className="w-full h-full overflow-auto flex items-center justify-center p-20 custom-scrollbar"
+                    className="w-full h-full overflow-auto flex items-center justify-center custom-scrollbar"
                 >
                     <div
-                        className={`transition-all duration-300 ease-in-out relative flex flex-col items-center gap-4 origin-center`}
+                        className={`relative flex flex-col items-center gap-4 origin-center`}
                         style={{ transform: `scale(${zoom})` }}
                     >
 
-                        {/* The Device Frame */}
+                        {/* The Device Frame - NO ANIMATION classes */}
                         <div
-                            className={`relative shadow-2xl bg-black overflow-hidden transition-all duration-500 ${current.frameClass}`}
+                            className={`relative shadow-2xl bg-black overflow-hidden ${current.frameClass}`}
                             style={{
                                 width: width + (activeDevice === 'mobile' ? 24 : activeDevice === 'tablet' ? 24 : 24),
                                 height: height + (activeDevice === 'mobile' ? 24 : activeDevice === 'tablet' ? 24 : 32),
@@ -210,7 +246,7 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
                             <iframe
                                 src={appUrl}
                                 title="Device Simulation"
-                                className="bg-white transition-all duration-500"
+                                className="bg-white"
                                 style={{
                                     width: `${width}px`,
                                     height: `${appHeight}px`,
@@ -229,10 +265,7 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
                             )}
                         </div>
 
-                        {/* Dimensions Label (Floating below scaled item) */}
-                        <div className="absolute -bottom-16 px-4 py-2 rounded-full bg-black/50 backdrop-blur-md text-white/90 text-sm font-mono font-bold whitespace-nowrap">
-                            {width}px × {appHeight}px {activeDevice === 'mobile' && <span className="opacity-70 text-xs ml-2">({mobileModels[activeMobileModel].label})</span>}
-                        </div>
+                        {/* Dimensions Label - REMOVED from bottom, moved to sidebar */}
                     </div>
                 </div>
             </div>
