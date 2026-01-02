@@ -218,6 +218,24 @@ const AppContent: React.FC = () => {
         if (bibleReaderRef.current) bibleReaderRef.current.setVoice(voiceURI);
     };
 
+    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const handleVerseHover = (ch: number, v: number) => {
+        // Cancel any pending clear instruction
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+        }
+        setHoveredVerse({ chapter: ch, verse: v });
+    };
+
+    const handleVerseLeave = () => {
+        // Delay clearing to allow moving to next verse
+        hoverTimeoutRef.current = setTimeout(() => {
+            setHoveredVerse(null);
+        }, 100); // 100ms debounce
+    };
+
     const handleBookSelect = (book: BibleBook, chapter: number = 1, verse: number = 1) => {
         setSelectedBook(book);
         setSelectedChapter(chapter);
@@ -324,8 +342,10 @@ const AppContent: React.FC = () => {
                     activeParasha={currentParasha}
                     onOpenParashaSummary={() => setIsParashaModalOpen(true)}
                     searchResults={searchResults}
-                    activeResult={searchResults[currentResultIndex] || null} // Pass active result
-                    searchQuery={lastSearchTerm} // Pass lastSearchTerm instead of live searchQuery to avoid auto-highlighting
+                    activeResult={searchResults[currentResultIndex] || null}
+                    searchQuery={lastSearchTerm}
+                    onVerseHover={handleVerseHover}
+                    onVerseLeave={handleVerseLeave}
                     searchWholeWord={searchWholeWord}
                     isRegularSearchActive={isRegularSearchActive}
                     onAddNote={(bookId, chapter, verse) => {
@@ -336,7 +356,7 @@ const AppContent: React.FC = () => {
                         id: Date.now().toString(), bookId, chapter, verse, title: `${t(bookId)} ${chapter}:${verse}`, createdAt: Date.now()
                     })}
                     onSearchRequest={handleSearchRequest}
-                    scrollSignal={scrollSignal} // Pass the signal to reader
+                    scrollSignal={scrollSignal}
                 />
             );
         } else if (viewMode === '3D') {
@@ -366,6 +386,7 @@ const AppContent: React.FC = () => {
                     isReaderMode={activeTab === 'reader'} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
                     toggleTTSPanel={toggleTTSPanel} toggleMenu={() => setIsMenuOpen(!isMenuOpen)} isTTSPanelOpen={isTTSPanelOpen}
                     isMenuOpen={isMenuOpen} selectedBook={selectedBook} selectedChapter={selectedChapter} currentVerse={currentVerse}
+                    hoveredVerse={activeTab === 'reader' ? hoveredVerse : null}
                     openBookModal={() => setIsBookModalOpen(true)} viewMode={viewMode} setViewMode={setViewMode}
                     currentParasha={null} onJumpToParasha={() => { }}
                     onOpenLibrary={() => setActiveTab('library')}
@@ -413,7 +434,10 @@ const AppContent: React.FC = () => {
                 onOpenSimulation={() => setIsSimulationOpen(true)}
             />
 
+            {/* Simulation Mode Overlay */}
             {isSimulationOpen && <SimulationMode onClose={() => setIsSimulationOpen(false)} isDarkMode={isDarkMode} />}
+
+
 
             {activeNoteRef && (
                 <NoteEditorModal

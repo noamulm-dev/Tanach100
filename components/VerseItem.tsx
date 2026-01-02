@@ -20,8 +20,8 @@ interface VerseItemProps {
     isRegularSearchActive: boolean;
     elsIndices?: Map<number, number>; // Map of letterIdx to groupId
     onContextMenu: (e: React.MouseEvent, verse: Verse) => void;
-    onMouseEnter: () => void;
-    onMouseLeave?: () => void; // Added
+    onPointerEnter: () => void;
+    onPointerLeave?: () => void;
     onElsClick?: (groupId: number) => void;
 }
 
@@ -54,7 +54,7 @@ const normalizeForMatch = (text: string): string => {
 const VerseItem: React.FC<VerseItemProps> = memo(({
     verse, chapterNum, readerStyle, activeTheme, isReading, ttsHighlight,
     verseHover, globalVerseCounter, activeResult, searchQuery, searchWholeWord,
-    isRegularSearchActive, elsIndices, onContextMenu, onMouseEnter, onMouseLeave, onElsClick
+    isRegularSearchActive, elsIndices, onContextMenu, onPointerEnter, onPointerLeave, onElsClick
 }) => {
     const { language } = useLanguage();
     const displayText = readerStyle.showNikud ? verse.text : stripNikud(verse.text);
@@ -206,8 +206,8 @@ const VerseItem: React.FC<VerseItemProps> = memo(({
                 data-verse={verse.verse}
                 className={`relative inline transition-[background-color,box-shadow] group rounded-[2px] ${isReading ? ttsHighlight : verseHover} cursor-pointer select-text duration-200`}
                 onContextMenu={(e) => onContextMenu(e, verse)}
-                onMouseEnter={() => { console.log('Verse Hover Internal:', chapterNum, verse.verse); onMouseEnter(); }}
-                onMouseLeave={onMouseLeave} // Added
+                onPointerEnter={onPointerEnter}
+                onPointerLeave={onPointerLeave}
             >
                 {readerStyle.showVerseNumbers && (
                     <span className={`inline-block mx-0.5 font-bold text-[0.65em] select-none ${activeTheme.accent}`}>
@@ -225,8 +225,8 @@ const VerseItem: React.FC<VerseItemProps> = memo(({
             data-verse={verse.verse}
             className={`relative flex items-start pl-1 pr-0 rounded-lg transition-[background-color,box-shadow] group ${isReading ? ttsHighlight : verseHover} cursor-pointer select-text duration-200`}
             onContextMenu={(e) => onContextMenu(e, verse)}
-            onMouseEnter={() => { console.log('Verse Hover Internal Block:', chapterNum, verse.verse); onMouseEnter(); }}
-            onMouseLeave={onMouseLeave} // Added
+            onPointerEnter={onPointerEnter}
+            onPointerLeave={onPointerLeave}
         >
             {readerStyle.showVerseNumbers && (
                 <WithHelp labelKey="label_verse_number" position="left" className="absolute top-[0.3em] right-0 flex flex-col items-center w-3.5 shrink-0 select-none">

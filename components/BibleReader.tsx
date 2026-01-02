@@ -357,8 +357,17 @@ const BibleReader = forwardRef<BibleReaderHandle, Props>(({
                 </div>
             )}
 
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0 relative pb-40" dir={language === 'he' ? 'ltr' : 'rtl'}>
-                {isLoading ? <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-400"><Loader2 size={40} className={`animate-spin ${activeTheme.accent}`} /><p className="font-bold">{t('loading')}</p></div> : (
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0 relative pb-40" dir={language === 'he' ? 'ltr' : 'rtl'}
+                onPointerMove={(e) => {
+                    // console.log('Reader Move', e.clientX, e.clientY);
+                }}
+            >
+                {isLoading ? (
+                    <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-400">
+                        <Loader2 size={40} className={`animate-spin ${activeTheme.accent}`} />
+                        <p className="font-bold">{t('loading')}</p>
+                    </div>
+                ) : (
                     <div className={`${activeTheme.bgPaper} reader-content-area min-h-full max-w-4xl mx-auto shadow-sm relative`} dir="rtl">
                         <ElsLinesOverlay searchResults={searchResults} containerRef={scrollContainerRef} readerStyle={readerStyle} />
                         <div className={`px-5 py-6 md:p-10 lg:p-16 relative z-10 ${!readerStyle.showChapterHeaders ? 'pt-2' : ''}`}>
@@ -396,7 +405,7 @@ const BibleReader = forwardRef<BibleReaderHandle, Props>(({
                                     <div className={`${activeTheme.textMain} w-full`} style={{ fontFamily: readerStyle.fontFamily, fontSize: `${readerStyle.fontSize * 1.5}rem`, lineHeight: readerStyle.lineHeight, textAlign: readerStyle.textAlign }}>
                                         {verses.map(v => {
                                             globalVerseCounter++;
-                                            return <VerseItem key={v.verse} verse={v} chapterNum={index + 1} readerStyle={readerStyle} activeTheme={activeTheme} isReading={ttsVerse?.chapter === index + 1 && ttsVerse?.verse === v.verse} ttsHighlight={isDarkMode ? 'bg-orange-500/20' : 'bg-orange-200'} verseHover={activeTheme.hover} globalVerseCounter={globalVerseCounter} activeResult={activeResult} searchQuery={searchQuery} searchWholeWord={searchWholeWord} isRegularSearchActive={isRegularSearchActive} elsIndices={currentElsHighlights?.get(`${index + 1}_${v.verse}`)} onContextMenu={(e) => { e.preventDefault(); const selectedText = window.getSelection()?.toString().trim(); setContextMenu({ x: e.clientX, y: e.clientY, verse: v, selectedText }); }} onMouseEnter={() => { if (onVerseHover) onVerseHover(index + 1, v.verse); }} onMouseLeave={() => { if (onVerseLeave) onVerseLeave(); }} />;
+                                            return <VerseItem key={v.verse} verse={v} chapterNum={index + 1} readerStyle={readerStyle} activeTheme={activeTheme} isReading={ttsVerse?.chapter === index + 1 && ttsVerse?.verse === v.verse} ttsHighlight={isDarkMode ? 'bg-orange-500/20' : 'bg-orange-200'} verseHover={activeTheme.hover} globalVerseCounter={globalVerseCounter} activeResult={activeResult} searchQuery={searchQuery} searchWholeWord={searchWholeWord} isRegularSearchActive={isRegularSearchActive} elsIndices={currentElsHighlights?.get(`${index + 1}_${v.verse}`)} onContextMenu={(e) => { e.preventDefault(); const selectedText = window.getSelection()?.toString().trim(); setContextMenu({ x: e.clientX, y: e.clientY, verse: v, selectedText }); }} onPointerEnter={() => { if (onVerseHover) onVerseHover(index + 1, v.verse); }} onPointerLeave={() => { if (onVerseLeave) onVerseLeave(); }} />;
                                         })}
                                     </div>
                                 </article>
@@ -435,31 +444,19 @@ const BibleReader = forwardRef<BibleReaderHandle, Props>(({
                     </div>
                 )}
             </div>
-            <ReaderContextMenu
-                contextMenu={contextMenu} menuView={menuView} setMenuView={setMenuView} onClose={() => setContextMenu(null)}
-                onGematria={() => {
-                    const textToCalc = contextMenu?.selectedText ? contextMenu.selectedText : contextMenu!.verse.text;
-                    onNavigateToGematria?.(textToCalc);
-                    setContextMenu(null);
-                }}
-                onCommentary={() => setMenuView('commentary')}
-                onCopy={() => { navigator.clipboard.writeText(contextMenu!.verse.text); setContextMenu(null); }}
-                onShare={() => setContextMenu(null)}
-                onShareImage={handleShareImage}
-                onNote={() => { onAddNote(selectedBook.id, contextMenu!.verse.chapter, contextMenu!.verse.verse); setContextMenu(null); }}
-                onBookmark={() => { onAddBookmark(selectedBook.id, contextMenu!.verse.chapter, contextMenu!.verse.verse); setContextMenu(null); }}
-                onSearch={(text) => { onSearchRequest(text); setContextMenu(null); }}
-                selectedText={contextMenu?.selectedText}
-                dir={dir} isDarkMode={isDarkMode} availableCommentators={availableCommentators} isLoadingCommentaries={isLoadingCommentaries} onOpenCommentary={() => { }}
-            />
-            {infoModalData && (
-                <ChapterInfoModal
-                    isOpen={!!infoModalData}
-                    onClose={() => setInfoModalData(null)}
-                    book={selectedBook}
-                    chapter={infoModalData.chapter}
-                    verseCount={infoModalData.verseCount}
-                    totalBookVerses={totalVerses}
+
+            {/* Context Menu */}
+            {contextMenu && (
+                <VerseContextMenu
+                    x={contextMenu.x}
+                    y={contextMenu.y}
+                    verse={contextMenu.verse}
+                    selectedText={contextMenu.selectedText}
+                    onClose={() => setContextMenu(null)}
+                    onAddNote={() => { if (onAddNote) onAddNote(contextMenu.verse); setContextMenu(null); }}
+                    onAddBookmark={() => { if (onAddBookmark) onAddBookmark(contextMenu.verse); setContextMenu(null); }}
+                    onCopy={() => { navigator.clipboard.writeText(contextMenu.selectedText || contextMenu.verse.text); setContextMenu(null); }}
+                    onShare={() => { handleShareImage(); setContextMenu(null); }}
                     isDarkMode={isDarkMode}
                 />
             )}
