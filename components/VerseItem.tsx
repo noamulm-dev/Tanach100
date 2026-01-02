@@ -205,7 +205,7 @@ const VerseItem: React.FC<VerseItemProps> = memo(({
                 data-verse={verse.verse}
                 className={`relative inline transition-[background-color,box-shadow] group rounded-[2px] ${isReading ? ttsHighlight : verseHover} cursor-pointer select-text duration-200`}
                 onContextMenu={(e) => onContextMenu(e, verse)}
-                onMouseEnter={onMouseEnter} // Re-enabled for hover effect
+                onMouseEnter={() => { console.log('Verse Hover Internal:', chapterNum, verse.verse); onMouseEnter(); }} // Log added
             >
                 {readerStyle.showVerseNumbers && (
                     <span className={`inline-block mx-0.5 font-bold text-[0.65em] select-none ${activeTheme.accent}`}>
@@ -223,7 +223,7 @@ const VerseItem: React.FC<VerseItemProps> = memo(({
             data-verse={verse.verse}
             className={`relative flex items-start pl-1 pr-0 rounded-lg transition-[background-color,box-shadow] group ${isReading ? ttsHighlight : verseHover} cursor-pointer select-text duration-200`}
             onContextMenu={(e) => onContextMenu(e, verse)}
-            onMouseEnter={onMouseEnter} // Re-enabled for hover effect
+            onMouseEnter={() => { console.log('Verse Hover Internal Block:', chapterNum, verse.verse); onMouseEnter(); }} // Log added
         >
             {readerStyle.showVerseNumbers && (
                 <WithHelp labelKey="label_verse_number" position="left" className="absolute top-[0.3em] right-0 flex flex-col items-center w-3.5 shrink-0 select-none">
