@@ -19,6 +19,7 @@ interface Props {
     onOpenDevPage: () => void;
     onToggleTTS: () => void;
     onOpenLegacyMatrix: () => void;
+    onOpenSimulation: () => void;
 }
 
 const LANGUAGES: { code: Language, label: string }[] = [
@@ -29,7 +30,7 @@ const LANGUAGES: { code: Language, label: string }[] = [
 
 const MainMenu: React.FC<Props> = ({
     isOpen, onClose, activeTab, setActiveTab, isDarkMode,
-    openSettingsModal, isSynced, currentParasha, onJumpToParasha, onOpenDevPage, onToggleTTS, onOpenLegacyMatrix
+    openSettingsModal, isSynced, currentParasha, onJumpToParasha, onOpenDevPage, onToggleTTS, onOpenLegacyMatrix, onOpenSimulation
 }) => {
     const { t, dir, language, setLanguage, showHelpLabels, setShowHelpLabels } = useLanguage();
     const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
@@ -138,13 +139,15 @@ const MainMenu: React.FC<Props> = ({
 
                 <div className={`h-px w-full my-1 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-100'}`}></div>
 
-                {/* Legacy Matrix */}
-                <button onClick={() => { onOpenLegacyMatrix(); onClose(); }} className={menuItemClass(false)}>
+                {/* Simulator Mode */}
+                <button onClick={() => { onOpenSimulation(); onClose(); }} className={menuItemClass(false)}>
                     <span className="flex items-center gap-3">
-                        <MonitorSmartphone size={18} className="text-slate-400 group-hover:text-amber-600" />
-                        <span>{t('menu_matrix_legacy') || 'מטריצה (ישן)'}</span>
+                        <MonitorSmartphone size={18} className="text-slate-400 group-hover:text-purple-500" />
+                        <span>{t('menu_simulator') || 'סימולטור מכשירים'}</span>
                     </span>
                 </button>
+
+                {/* Legacy Matrix - Reduced visibility or removed if user didn't ask for it specifically here, but keeping simply is fine */}
 
                 <div className={`h-px w-full my-1 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-100'}`}></div>
 

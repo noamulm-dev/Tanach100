@@ -375,6 +375,7 @@ const AppContent: React.FC = () => {
                 activeTab={activeTab}
                 onOpenLegacyMatrix={() => { }} // Removed legacy support
                 onOpenSettings={() => setIsSettingsOpen(true)}
+                onOpenSimulation={() => setIsSimulationOpen(true)}
             />
 
             <SettingsModal
