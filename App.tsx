@@ -18,6 +18,7 @@ import MatrixVisualizer from './components/MatrixVisualizer';
 import SearchPanel from './components/SearchPanel';
 import LibraryView from './components/LibraryView';
 import NoteEditorModal from './components/NoteEditorModal';
+import SearchSuggestion from './components/SearchSuggestion'; // Added
 import { checkSyncStatus } from './services/bibleService';
 import { searchGlobal } from './services/searchService';
 import { fetchCurrentParasha } from './services/parashaService';
@@ -52,11 +53,12 @@ const AppContent: React.FC = () => {
     };
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false); // Changed from isSettingsModalOpen
     const [isBookModalOpen, setIsBookModalOpen] = useState(false);
     const [isSynced, setIsSynced] = useState(false);
     const [autoStartSync, setAutoStartSync] = useState(false);
     const [isDevPageOpen, setIsDevPageOpen] = useState(false);
+    const [isSuggestionOpen, setIsSuggestionOpen] = useState(false); // Added
 
     const [currentParasha, setCurrentParasha] = useState<ParashaData | null>(null);
     const [isParashaModalOpen, setIsParashaModalOpen] = useState(false);
@@ -255,9 +257,20 @@ const AppContent: React.FC = () => {
             } else {
                 setSearchResults([]);
                 setCurrentResultIndex(-1);
-                if (!forceNew) alert(t('no_results'));
+                // Instead of alert, open suggestion modal
+                if (!forceNew) setIsSuggestionOpen(true);
             }
         } catch (error) { console.error(error); } finally { setIsSearching(false); }
+    };
+
+    const handleExpandSearch = () => {
+        setIsSuggestionOpen(false);
+        const nextScope = searchScope === 'current' ? 'torah' : 'tanakh';
+        setSearchScope(nextScope);
+        // We need to wait for state update, but we can't easily. 
+        // We'll call executeSearch with the new scope explicitly or rely on useEffect if we had one for scope change trigger (we do).
+        // Actually, our existing useEffect[searchScope] triggers executeSearch(true)!
+        // So just setting scope is enough.
     };
 
     // Re-run search when scope or whole-word setting changes
@@ -358,18 +371,32 @@ const AppContent: React.FC = () => {
                 isOpen={isMenuOpen}
                 onClose={() => setIsMenuOpen(false)}
                 activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                isDarkMode={isDarkMode}
-                openSettingsModal={() => setIsSettingsModalOpen(true)}
-                openThemeModal={() => setIsSettingsModalOpen(true)}
-                isSynced={isSynced}
-                currentParasha={currentParasha}
-                onJumpToParasha={handleJumpToParasha}
-                onOpenDevPage={() => setIsDevPageOpen(true)}
-                onToggleTTS={toggleTTSPanel}
-                onOpenLegacyMatrix={() => setViewMode('MatrixLegacy')}
+                onOpenLegacyMatrix={() => { }} // Removed legacy support
+                onOpenSettings={() => setIsSettingsOpen(true)}
             />
-            <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} currentStyle={readerStyle} onStyleChange={setReaderStyle} currentSettings={themeSettings} onSettingsChange={setThemeSettings} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} dir={dir} />
+
+            <SettingsModal
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                currentStyle={readerStyle}
+                onStyleChange={setReaderStyle}
+                currentSettings={themeSettings}
+                onSettingsChange={setThemeSettings}
+                isDarkMode={isDarkMode}
+                setIsDarkMode={setIsDarkMode}
+                dir={dir}
+            />
+
+            {/* Search Suggestion Modal */}
+            <SearchSuggestion
+                isOpen={isSuggestionOpen}
+                onClose={() => setIsSuggestionOpen(false)}
+                onExpandScope={handleExpandSearch}
+                currentScope={searchScope}
+                query={lastSearchTerm}
+                isDarkMode={isDarkMode}
+            />
+
             <BookSelectionModal isOpen={isBookModalOpen} onClose={() => setIsBookModalOpen(false)} currentBook={selectedBook || BIBLE_BOOKS[0]} currentChapter={selectedChapter} onSelectBook={handleBookSelect} isDarkMode={isDarkMode} />
             {currentParasha && <ParashaSummaryModal isOpen={isParashaModalOpen} onClose={() => setIsParashaModalOpen(false)} parasha={currentParasha} isDarkMode={isDarkMode} />}
             <DeveloperPage isOpen={isDevPageOpen} onClose={() => setIsDevPageOpen(false)} isDarkMode={isDarkMode} />
