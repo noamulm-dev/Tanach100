@@ -17,6 +17,7 @@ interface Props {
     selectedBook: BibleBook | null;
     selectedChapter: number;
     currentVerse: number;
+    hoveredVerse?: { chapter: number, verse: number } | null; // Added
     openBookModal: () => void;
     viewMode: ViewMode;
     setViewMode: (mode: ViewMode) => void;
@@ -27,7 +28,7 @@ interface Props {
 
 const AppHeader: React.FC<Props> = ({
     isReaderMode, isDarkMode, toggleDarkMode, toggleMenu,
-    isMenuOpen, selectedBook, selectedChapter, currentVerse, openBookModal,
+    isMenuOpen, selectedBook, selectedChapter, currentVerse, hoveredVerse, openBookModal,
     viewMode, setViewMode
 }) => {
     const { t, getBookName, language, dir } = useLanguage();
@@ -139,10 +140,14 @@ const AppHeader: React.FC<Props> = ({
                                         {selectedBook ? getBookName(selectedBook.id) : t('select_book_title')}
                                     </span>
                                     {selectedBook && (
-                                        <span className="font-bold text-[12px] opacity-70 leading-none">
+                                        <span className={`font-bold text-[12px] leading-none ${hoveredVerse ? 'text-indigo-500 font-black' : 'opacity-70'}`}>
                                             {language === 'he'
-                                                ? `${numberToHebrew(selectedChapter)}:${numberToHebrew(currentVerse)}`
-                                                : `${selectedChapter}:${currentVerse}`
+                                                ? hoveredVerse
+                                                    ? `${numberToHebrew(hoveredVerse.chapter)}:${numberToHebrew(hoveredVerse.verse)}`
+                                                    : `${numberToHebrew(selectedChapter)}:${numberToHebrew(currentVerse)}`
+                                                : hoveredVerse
+                                                    ? `${hoveredVerse.chapter}:${hoveredVerse.verse}`
+                                                    : `${selectedChapter}:${currentVerse}`
                                             }
                                         </span>
                                     )}

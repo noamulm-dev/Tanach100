@@ -46,16 +46,17 @@ interface Props {
     onAddBookmark: (bookId: string, chapter: number, verse: number) => void;
     onSearchRequest: (text: string) => void;
     scrollSignal?: { ts: number, chapter: number, verse: number } | null;
+    onVerseHover?: (chapter: number, verse: number) => void;
 }
 
 type MenuMenuView = 'main' | 'commentary';
 type TTSState = 'idle' | 'playing' | 'paused';
 
-const BibleReader = forwardRef<BibleReaderHandle, Props>(({ 
-    selectedBook, 
-    selectedChapter, 
-    onBookChange, 
-    onChapterChange, 
+const BibleReader = forwardRef<BibleReaderHandle, Props>(({
+    selectedBook,
+    selectedChapter,
+    onBookChange,
+    onChapterChange,
     onVerseChange,
     readerStyle = { fontFamily: 'Frank Ruhl Libre', fontSize: 1.2, showNikud: true, showVerseNumbers: true, showChapterHeaders: true, lineHeight: 1.6, verseSpacing: 0.5, textAlign: 'right', isContinuous: false },
     activeTheme,
@@ -71,7 +72,8 @@ const BibleReader = forwardRef<BibleReaderHandle, Props>(({
     onAddNote,
     onAddBookmark,
     onSearchRequest,
-    scrollSignal
+    scrollSignal,
+    onVerseHover
 }, ref) => {
     const { t, getBookName, language, dir } = useLanguage();
     const [fullBookData, setFullBookData] = useState<Verse[][]>([]);
@@ -83,19 +85,19 @@ const BibleReader = forwardRef<BibleReaderHandle, Props>(({
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const chapterRefs = useRef<(HTMLElement | null)[]>([]);
     const [ttsState, setTtsState] = useState<TTSState>('idle');
-    const [ttsVerse, setTtsVerse] = useState<{chapter: number, verse: number} | null>(null);
+    const [ttsVerse, setTtsVerse] = useState<{ chapter: number, verse: number } | null>(null);
     const [infoModalData, setInfoModalData] = useState<{ chapter: number, verseCount: number } | null>(null);
     const [isCapturing, setIsCapturing] = useState(false);
     const [shareData, setShareData] = useState<{ blob: Blob, url: string } | null>(null);
-    
+
     const ttsActiveRef = useRef(false);
     const ttsSpeedRef = useRef(0.9);
     const ttsVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
     const selectedChapterRef = useRef(selectedChapter);
-    
+
     // Track last reported position to avoid state spam
     const lastReportedPos = useRef({ chapter: selectedChapter, verse: 1 });
-    
+
     let globalVerseCounter = 0;
 
     const totalVerses = useMemo(() => fullBookData.reduce((acc, ch) => acc + ch.length, 0), [fullBookData]);
@@ -121,20 +123,20 @@ const BibleReader = forwardRef<BibleReaderHandle, Props>(({
     // Scroll Handler for Tracking Position
     const handleScroll = useCallback(() => {
         if (!scrollContainerRef.current) return;
-        
+
         const container = scrollContainerRef.current;
         const rect = container.getBoundingClientRect();
-        
+
         // Check point at 20% height from top (reading line)
         const checkX = rect.left + rect.width / 2;
         const checkY = rect.top + (rect.height * 0.2);
-        
+
         const el = document.elementFromPoint(checkX, checkY);
-        
+
         if (el) {
             const verseEl = el.closest('[data-verse]');
             const chapterEl = el.closest('article');
-            
+
             let newChapter = -1;
             let newVerse = -1;
 
@@ -246,7 +248,7 @@ const BibleReader = forwardRef<BibleReaderHandle, Props>(({
             if (!container) throw new Error("Container not found");
 
             const containerRect = container.getBoundingClientRect();
-            
+
             const dataUrl = await toJpeg(container, {
                 quality: 0.92,
                 pixelRatio: 2, // Use device independent pixel ratio for quality
@@ -268,7 +270,7 @@ const BibleReader = forwardRef<BibleReaderHandle, Props>(({
 
             const res = await fetch(dataUrl);
             const blob = await res.blob();
-            
+
             setShareData({ blob, url: dataUrl });
         } catch (err) {
             console.error('Capture failed', err);
@@ -362,37 +364,37 @@ const BibleReader = forwardRef<BibleReaderHandle, Props>(({
                                 <article key={index} className={`${readerStyle.showChapterHeaders ? 'mb-10' : 'mb-0'} scroll-mt-4`} ref={el => { chapterRefs.current[index] = el; }}>
                                     {readerStyle.showChapterHeaders && (
                                         <div className={`flex items-center justify-center gap-4 mb-6 p-4 rounded-xl border border-black/5`} style={{ backgroundColor: activeTheme.bgPaper }}>
-                                            <button 
+                                            <button
                                                 onClick={() => {
                                                     if ((index + 1) > 1) {
                                                         onChapterChange(index);
                                                         scrollToVerse(index, 1);
                                                     }
-                                                }} 
+                                                }}
                                                 className={`p-2 transition-colors rounded-full ${(index + 1) > 1 ? 'hover:bg-black/5 opacity-100' : 'opacity-20 cursor-default'}`}
                                             >
-                                                <ArrowRight size={20}/>
+                                                <ArrowRight size={20} />
                                             </button>
                                             <div className={`px-6 py-1 border font-bold text-sm uppercase rounded-full cursor-pointer transition-colors ${activeTheme.bgMain} ${activeTheme.border} hover:bg-black/5`} onClick={() => setInfoModalData({ chapter: index + 1, verseCount: verses.length })}>
                                                 {getBookName(selectedBook.id)} • {t('chapter')} {numberToHebrew(index + 1)}
                                             </div>
-                                            <button 
+                                            <button
                                                 onClick={() => {
                                                     if ((index + 1) < selectedBook.chaptersCount) {
                                                         onChapterChange(index + 2);
                                                         scrollToVerse(index + 2, 1);
                                                     }
-                                                }} 
+                                                }}
                                                 className={`p-2 transition-colors rounded-full ${(index + 1) < selectedBook.chaptersCount ? 'hover:bg-black/5 opacity-100' : 'opacity-20 cursor-default'}`}
                                             >
-                                                <ArrowLeft size={20}/>
+                                                <ArrowLeft size={20} />
                                             </button>
                                         </div>
                                     )}
                                     <div className={`${activeTheme.textMain} w-full`} style={{ fontFamily: readerStyle.fontFamily, fontSize: `${readerStyle.fontSize * 1.5}rem`, lineHeight: readerStyle.lineHeight, textAlign: readerStyle.textAlign }}>
                                         {verses.map(v => {
                                             globalVerseCounter++;
-                                            return <VerseItem key={v.verse} verse={v} chapterNum={index + 1} readerStyle={readerStyle} activeTheme={activeTheme} isReading={ttsVerse?.chapter === index + 1 && ttsVerse?.verse === v.verse} ttsHighlight={isDarkMode ? 'bg-orange-500/20' : 'bg-orange-200'} verseHover={activeTheme.hover} globalVerseCounter={globalVerseCounter} activeResult={activeResult} searchQuery={searchQuery} searchWholeWord={searchWholeWord} isRegularSearchActive={isRegularSearchActive} elsIndices={currentElsHighlights?.get(`${index + 1}_${v.verse}`)} onContextMenu={(e) => { e.preventDefault(); const selectedText = window.getSelection()?.toString().trim(); setContextMenu({ x: e.clientX, y: e.clientY, verse: v, selectedText }); }} onMouseEnter={() => {}} />;
+                                            return <VerseItem key={v.verse} verse={v} chapterNum={index + 1} readerStyle={readerStyle} activeTheme={activeTheme} isReading={ttsVerse?.chapter === index + 1 && ttsVerse?.verse === v.verse} ttsHighlight={isDarkMode ? 'bg-orange-500/20' : 'bg-orange-200'} verseHover={activeTheme.hover} globalVerseCounter={globalVerseCounter} activeResult={activeResult} searchQuery={searchQuery} searchWholeWord={searchWholeWord} isRegularSearchActive={isRegularSearchActive} elsIndices={currentElsHighlights?.get(`${index + 1}_${v.verse}`)} onContextMenu={(e) => { e.preventDefault(); const selectedText = window.getSelection()?.toString().trim(); setContextMenu({ x: e.clientX, y: e.clientY, verse: v, selectedText }); }} onMouseEnter={() => { if (onVerseHover) onVerseHover(index + 1, v.verse); }} />;
                                         })}
                                     </div>
                                 </article>
@@ -431,12 +433,12 @@ const BibleReader = forwardRef<BibleReaderHandle, Props>(({
                     </div>
                 )}
             </div>
-            <ReaderContextMenu 
+            <ReaderContextMenu
                 contextMenu={contextMenu} menuView={menuView} setMenuView={setMenuView} onClose={() => setContextMenu(null)}
-                onGematria={() => { 
+                onGematria={() => {
                     const textToCalc = contextMenu?.selectedText ? contextMenu.selectedText : contextMenu!.verse.text;
-                    onNavigateToGematria?.(textToCalc); 
-                    setContextMenu(null); 
+                    onNavigateToGematria?.(textToCalc);
+                    setContextMenu(null);
                 }}
                 onCommentary={() => setMenuView('commentary')}
                 onCopy={() => { navigator.clipboard.writeText(contextMenu!.verse.text); setContextMenu(null); }}
@@ -446,17 +448,17 @@ const BibleReader = forwardRef<BibleReaderHandle, Props>(({
                 onBookmark={() => { onAddBookmark(selectedBook.id, contextMenu!.verse.chapter, contextMenu!.verse.verse); setContextMenu(null); }}
                 onSearch={(text) => { onSearchRequest(text); setContextMenu(null); }}
                 selectedText={contextMenu?.selectedText}
-                dir={dir} isDarkMode={isDarkMode} availableCommentators={availableCommentators} isLoadingCommentaries={isLoadingCommentaries} onOpenCommentary={() => {}}
+                dir={dir} isDarkMode={isDarkMode} availableCommentators={availableCommentators} isLoadingCommentaries={isLoadingCommentaries} onOpenCommentary={() => { }}
             />
             {infoModalData && (
-                <ChapterInfoModal 
-                    isOpen={!!infoModalData} 
-                    onClose={() => setInfoModalData(null)} 
-                    book={selectedBook} 
-                    chapter={infoModalData.chapter} 
-                    verseCount={infoModalData.verseCount} 
-                    totalBookVerses={totalVerses} 
-                    isDarkMode={isDarkMode} 
+                <ChapterInfoModal
+                    isOpen={!!infoModalData}
+                    onClose={() => setInfoModalData(null)}
+                    book={selectedBook}
+                    chapter={infoModalData.chapter}
+                    verseCount={infoModalData.verseCount}
+                    totalBookVerses={totalVerses}
+                    isDarkMode={isDarkMode}
                 />
             )}
         </div>

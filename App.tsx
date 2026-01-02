@@ -65,6 +65,9 @@ const AppContent: React.FC = () => {
     const [currentParasha, setCurrentParasha] = useState<ParashaData | null>(null);
     const [isParashaModalOpen, setIsParashaModalOpen] = useState(false);
 
+    // Hover State for header updates
+    const [hoveredVerse, setHoveredVerse] = useState<{ chapter: number, verse: number } | null>(null);
+
     // Local Library State
     const [activeNoteRef, setActiveNoteRef] = useState<{ bookId: string, chapter: number, startVerse: number, endVerse?: number, selectedText?: string } | null>(null);
 
@@ -219,6 +222,7 @@ const AppContent: React.FC = () => {
         setSelectedBook(book);
         setSelectedChapter(chapter);
         setCurrentVerse(verse);
+        setHoveredVerse(null); // Reset hover state when navigating
         // Dispatch scroll signal when selecting directly from modal
         setScrollSignal({ ts: Date.now(), chapter, verse });
     };

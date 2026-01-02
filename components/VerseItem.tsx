@@ -63,7 +63,7 @@ const VerseItem: React.FC<VerseItemProps> = memo(({
     const activeResultLetterIndices = React.useMemo(() => {
         if (!activeResult || !activeResult.elsComponents) return new Set<number>();
         const indices = new Set<number>();
-        
+
         // Safety check: only process if the result potentially belongs to this book/chapter to avoid wasted iterations
         // Since VerseItem is only rendered for the current book, checking chapter and verse is enough.
         activeResult.elsComponents.forEach(c => {
@@ -80,7 +80,7 @@ const VerseItem: React.FC<VerseItemProps> = memo(({
             // Regex to group a Hebrew letter with its subsequent combining marks (Nikud/Cantillation)
             // OR match non-Hebrew characters (spaces, punctuation) to preserve them as is.
             const clusters = text.match(/([\u05D0-\u05EA][\u0591-\u05C7]*)|([^\u05D0-\u05EA]+)/g) || [];
-            
+
             let letterCounter = 0; // Tracks the ordinal index of Hebrew letters
 
             return (
@@ -89,32 +89,32 @@ const VerseItem: React.FC<VerseItemProps> = memo(({
                         const firstChar = cluster[0];
                         // Check if it's a Hebrew letter (and thus a valid ELS counting index)
                         const isHebrewLetter = firstChar >= '\u05D0' && firstChar <= '\u05EA';
-                        
+
                         if (!isHebrewLetter) {
                             return <span key={cIdx}>{cluster}</span>;
                         }
 
                         const currentLetterIdx = letterCounter++;
-                        
+
                         // Check if this specific letter ordinal has an ELS match
                         const groupId = elsIndices.get(currentLetterIdx);
                         const isElsChar = groupId !== undefined;
-                        
+
                         if (isElsChar) {
                             const color = ELS_COLORS[groupId % ELS_COLORS.length];
-                            
+
                             // Check if this specific letter index belongs to the ACTIVE result
                             const isActive = activeResultLetterIndices.has(currentLetterIdx);
-                            
+
                             return (
-                                <span 
-                                    key={cIdx} 
+                                <span
+                                    key={cIdx}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         if (onElsClick) onElsClick(groupId);
                                     }}
                                     className={`els-char els-group-${groupId} relative inline-block text-center min-w-[1.1em] cursor-pointer hover:scale-110 transition-transform z-10`}
-                                    style={{ 
+                                    style={{
                                         margin: '0 1px',
                                         verticalAlign: 'baseline',
                                     }}
@@ -123,7 +123,7 @@ const VerseItem: React.FC<VerseItemProps> = memo(({
                                     data-verse-key={`${chapterNum}_${verse.verse}`}
                                 >
                                     {/* Background Box - Semi-transparent and Rounded */}
-                                    <span 
+                                    <span
                                         className={`absolute rounded ${isActive ? 'ring-2 ring-offset-1 ring-offset-white dark:ring-offset-slate-900 ring-black dark:ring-white shadow-sm z-10' : 'z-0'}`}
                                         style={{
                                             backgroundColor: color,
@@ -135,7 +135,7 @@ const VerseItem: React.FC<VerseItemProps> = memo(({
                                             opacity: isActive ? 0.6 : 0.35 // Transparent background
                                         }}
                                     />
-                                    
+
                                     {/* Text Layer - Use inherit color to blend naturally */}
                                     <span className="relative z-10 font-normal" style={{ lineHeight: 'inherit', color: 'inherit' }}>
                                         {cluster}
@@ -151,24 +151,24 @@ const VerseItem: React.FC<VerseItemProps> = memo(({
 
         // --- Priority 2: Regular Multi-Word Search ---
         if (!searchQuery.trim() || !isRegularSearchActive) return text;
-        
+
         const partsToParse = searchQuery.split(',').map(p => p.trim());
         const terms = partsToParse.filter(p => !/^-?\d+$/.test(p) && p.length > 0);
-        
+
         if (terms.length === 0) return text;
-        
+
         const patternParts = terms.map(term => {
             const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const hasNikud = /[\u0591-\u05C7]/.test(term);
-            return hasNikud 
-                ? escaped + '[\\u0591-\u05C7]*' 
+            return hasNikud
+                ? escaped + '[\\u0591-\u05C7]*'
                 : escaped.split('').join('[\\u0591-\u05C7]*') + '[\\u0591-\u05C7]*';
         });
-        
+
         let combinedPattern = `(${patternParts.join('|')})`;
         if (searchWholeWord) combinedPattern = `(?<![\\u05D0-\u05EA\\u0591-\\u05C7])` + combinedPattern + `(?![\\u05D0-\\u05EA\\u0591-\\u05C7])`;
         const regex = new RegExp(combinedPattern, 'g');
-        
+
         const parts = text.split(regex);
         let matchCounter = 0;
 
@@ -176,22 +176,22 @@ const VerseItem: React.FC<VerseItemProps> = memo(({
             <>
                 {parts.map((part, index) => {
                     if (index % 2 === 1) {
-                         // Check if the ACTIVE search result points to THIS specific match instance
-                         const isContextMatch = activeResult && 
-                                                activeResult.chapter === chapterNum && 
-                                                activeResult.verse === verse.verse;
-                                                
-                         const isActive = isContextMatch && (matchCounter === activeResult.occurrenceIndex);
-                         
-                         matchCounter++;
-                         
-                         const cleanPart = normalizeForMatch(part);
-                         let matchedTermIndex = terms.findIndex(t => cleanPart === normalizeForMatch(t));
-                         if (matchedTermIndex === -1) matchedTermIndex = 0;
-                         const colorClass = HIGHLIGHT_COLORS[matchedTermIndex % HIGHLIGHT_COLORS.length];
-                         
-                         const activeClass = isActive ? `ring-2 ring-offset-1 ring-offset-white dark:ring-offset-slate-900 ring-black dark:ring-white z-10 relative rounded-md` : 'rounded-[2px]';
-                         return <span key={index} className={`${colorClass} ${activeClass}`}>{part}</span>;
+                        // Check if the ACTIVE search result points to THIS specific match instance
+                        const isContextMatch = activeResult &&
+                            activeResult.chapter === chapterNum &&
+                            activeResult.verse === verse.verse;
+
+                        const isActive = isContextMatch && (matchCounter === activeResult.occurrenceIndex);
+
+                        matchCounter++;
+
+                        const cleanPart = normalizeForMatch(part);
+                        let matchedTermIndex = terms.findIndex(t => cleanPart === normalizeForMatch(t));
+                        if (matchedTermIndex === -1) matchedTermIndex = 0;
+                        const colorClass = HIGHLIGHT_COLORS[matchedTermIndex % HIGHLIGHT_COLORS.length];
+
+                        const activeClass = isActive ? `ring-2 ring-offset-1 ring-offset-white dark:ring-offset-slate-900 ring-black dark:ring-white z-10 relative rounded-md` : 'rounded-[2px]';
+                        return <span key={index} className={`${colorClass} ${activeClass}`}>{part}</span>;
                     }
                     return <span key={index}>{part}</span>;
                 })}
@@ -205,7 +205,7 @@ const VerseItem: React.FC<VerseItemProps> = memo(({
                 data-verse={verse.verse}
                 className={`relative inline transition-[background-color,box-shadow] group rounded-[2px] ${isReading ? ttsHighlight : verseHover} cursor-pointer select-text duration-200`}
                 onContextMenu={(e) => onContextMenu(e, verse)}
-                // Removed onMouseEnter to prevent jitter when scrolling
+                onMouseEnter={onMouseEnter} // Re-enabled for hover effect
             >
                 {readerStyle.showVerseNumbers && (
                     <span className={`inline-block mx-0.5 font-bold text-[0.65em] select-none ${activeTheme.accent}`}>
@@ -219,11 +219,11 @@ const VerseItem: React.FC<VerseItemProps> = memo(({
     }
 
     return (
-        <div 
-            data-verse={verse.verse} 
-            className={`relative flex items-start pl-1 pr-0 rounded-lg transition-[background-color,box-shadow] group ${isReading ? ttsHighlight : verseHover} cursor-pointer select-text duration-200`} 
-            onContextMenu={(e) => onContextMenu(e, verse)} 
-            // Removed onMouseEnter to prevent jitter when scrolling
+        <div
+            data-verse={verse.verse}
+            className={`relative flex items-start pl-1 pr-0 rounded-lg transition-[background-color,box-shadow] group ${isReading ? ttsHighlight : verseHover} cursor-pointer select-text duration-200`}
+            onContextMenu={(e) => onContextMenu(e, verse)}
+            onMouseEnter={onMouseEnter} // Re-enabled for hover effect
         >
             {readerStyle.showVerseNumbers && (
                 <WithHelp labelKey="label_verse_number" position="left" className="absolute top-[0.3em] right-0 flex flex-col items-center w-3.5 shrink-0 select-none">
