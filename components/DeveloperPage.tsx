@@ -7,27 +7,34 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     isDarkMode: boolean;
+    onOpenSimulation: () => void;
 }
 
 // Representation of the file structure based on the project description
 const FILE_STRUCTURE = [
-    { name: 'public', type: 'folder', children: [
-        { name: 'manifest.json', type: 'file' },
-        { name: 'favicon.ico', type: 'file' }
-    ]},
-    { name: 'src', type: 'folder', children: [
-        { name: 'components', type: 'folder', children: [{ name: '...', type: 'file' }] },
-        { name: 'services', type: 'folder', children: [
-            { name: 'bibleService.ts', type: 'file' },
-            { name: 'parashaService.ts', type: 'file' },
-            { name: 'searchService.ts', type: 'file' }
-        ]},
-        { name: 'utils', type: 'folder', children: [{ name: 'gematria.ts', type: 'file' }] },
-        { name: 'App.tsx', type: 'file' },
-        { name: 'index.tsx', type: 'file' },
-        { name: 'types.ts', type: 'file' },
-        { name: 'constants.ts', type: 'file' }
-    ]},
+    {
+        name: 'public', type: 'folder', children: [
+            { name: 'manifest.json', type: 'file' },
+            { name: 'favicon.ico', type: 'file' }
+        ]
+    },
+    {
+        name: 'src', type: 'folder', children: [
+            { name: 'components', type: 'folder', children: [{ name: '...', type: 'file' }] },
+            {
+                name: 'services', type: 'folder', children: [
+                    { name: 'bibleService.ts', type: 'file' },
+                    { name: 'parashaService.ts', type: 'file' },
+                    { name: 'searchService.ts', type: 'file' }
+                ]
+            },
+            { name: 'utils', type: 'folder', children: [{ name: 'gematria.ts', type: 'file' }] },
+            { name: 'App.tsx', type: 'file' },
+            { name: 'index.tsx', type: 'file' },
+            { name: 'types.ts', type: 'file' },
+            { name: 'constants.ts', type: 'file' }
+        ]
+    },
     { name: 'index.html', type: 'file' },
     { name: 'package.json', type: 'file' },
     { name: 'tsconfig.json', type: 'file' },
@@ -57,7 +64,7 @@ const FileNode: React.FC<{ item: any, level: number, isDarkMode: boolean }> = ({
     );
 };
 
-const DeveloperPage: React.FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
+const DeveloperPage: React.FC<Props> = ({ isOpen, onClose, isDarkMode, onOpenSimulation }) => {
     const { dir } = useLanguage();
 
     if (!isOpen) return null;
@@ -83,7 +90,7 @@ const DeveloperPage: React.FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-                
+
                 {/* File Structure Section */}
                 <div className={`p-6 rounded-2xl border shadow-sm flex-1 ${cardBg}`}>
                     <div className="flex items-center gap-3 mb-4 border-b pb-4 border-dashed border-slate-200 dark:border-slate-700">
@@ -95,12 +102,24 @@ const DeveloperPage: React.FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
                             <p className="text-sm opacity-70">תצוגת היררכיית הקבצים של האפליקציה</p>
                         </div>
                     </div>
-                    
+
                     <div className="overflow-x-auto font-mono text-sm leading-relaxed" dir="ltr">
                         {FILE_STRUCTURE.map((item, idx) => (
                             <FileNode key={idx} item={item} level={0} isDarkMode={isDarkMode} />
                         ))}
                     </div>
+                </div>
+
+                {/* Actions */}
+                <div className={`p-6 rounded-2xl border shadow-sm ${cardBg}`}>
+                    <h3 className="font-bold text-lg mb-4">פעולות</h3>
+                    <button
+                        onClick={onOpenSimulation}
+                        className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-lg shadow-indigo-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                        <Terminal size={20} />
+                        פתח סימולטור מכשירים (Device Simulator)
+                    </button>
                 </div>
             </div>
         </div>

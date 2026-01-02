@@ -19,6 +19,7 @@ import SearchPanel from './components/SearchPanel';
 import LibraryView from './components/LibraryView';
 import NoteEditorModal from './components/NoteEditorModal';
 import SearchSuggestion from './components/SearchSuggestion'; // Added
+import SimulationMode from './components/SimulationMode';
 import { checkSyncStatus } from './services/bibleService';
 import { searchGlobal } from './services/searchService';
 import { fetchCurrentParasha } from './services/parashaService';
@@ -58,6 +59,7 @@ const AppContent: React.FC = () => {
     const [isSynced, setIsSynced] = useState(false);
     const [autoStartSync, setAutoStartSync] = useState(false);
     const [isDevPageOpen, setIsDevPageOpen] = useState(false);
+    const [isSimulationOpen, setIsSimulationOpen] = useState(false);
     const [isSuggestionOpen, setIsSuggestionOpen] = useState(false); // Added
 
     const [currentParasha, setCurrentParasha] = useState<ParashaData | null>(null);
@@ -399,7 +401,14 @@ const AppContent: React.FC = () => {
 
             <BookSelectionModal isOpen={isBookModalOpen} onClose={() => setIsBookModalOpen(false)} currentBook={selectedBook || BIBLE_BOOKS[0]} currentChapter={selectedChapter} onSelectBook={handleBookSelect} isDarkMode={isDarkMode} />
             {currentParasha && <ParashaSummaryModal isOpen={isParashaModalOpen} onClose={() => setIsParashaModalOpen(false)} parasha={currentParasha} isDarkMode={isDarkMode} />}
-            <DeveloperPage isOpen={isDevPageOpen} onClose={() => setIsDevPageOpen(false)} isDarkMode={isDarkMode} />
+            <DeveloperPage
+                isOpen={isDevPageOpen}
+                onClose={() => setIsDevPageOpen(false)}
+                isDarkMode={isDarkMode}
+                onOpenSimulation={() => setIsSimulationOpen(true)}
+            />
+
+            {isSimulationOpen && <SimulationMode onClose={() => setIsSimulationOpen(false)} isDarkMode={isDarkMode} />}
 
             {activeNoteRef && (
                 <NoteEditorModal
