@@ -4,7 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import {
     Loader2, ArrowLeft, ArrowRight, CheckCircle2,
     Book, Scroll, Library, WholeWord, Star,
-    History, Trash2, X, SlidersHorizontal, Hash, LayoutList, AlignJustify, WrapText, Search, ChevronDown, ChevronUp
+    History, Trash2, X, SlidersHorizontal, Hash, LayoutList, AlignJustify, Search, ChevronDown, ChevronUp
 } from 'lucide-react';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import WithHelp from './WithHelp';
@@ -17,6 +17,7 @@ interface Props {
     currentResultIndex: number;
     onPrevious: () => void;
     isSearching: boolean;
+    searchProgress?: number;
     // Deprecated but kept for compatibility
     isExpanded?: boolean;
     toggleExpanded?: () => void;
@@ -32,7 +33,7 @@ interface Props {
 
 const SearchPanel: React.FC<Props> = ({
     searchQuery, setSearchQuery, onSearch, searchResults, currentResultIndex, onPrevious,
-    isSearching, searchWholeWord, setSearchWholeWord,
+    isSearching, searchProgress = 0, searchWholeWord, setSearchWholeWord,
     searchScope, setSearchScope, isDarkMode, readerStyle, onStyleChange
 }) => {
     const { t, dir } = useLanguage();
@@ -144,6 +145,16 @@ const SearchPanel: React.FC<Props> = ({
             dir={dir}
             style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}
         >
+            {/* Progress Bar */}
+            {isSearching && (
+                <div className="absolute top-0 left-0 w-full h-1 bg-gray-200 overflow-hidden z-50">
+                    <div
+                        className={`h-full transition-all duration-300 ease-out ${isDarkMode ? 'bg-indigo-500' : 'bg-indigo-600'}`}
+                        style={{ width: `${Math.max(5, searchProgress)}%` }}
+                    />
+                </div>
+            )}
+
             <div className="px-3 py-3 flex items-center gap-3 relative z-30">
                 {/* 1. Settings Button (Popover Trigger) */}
                 <div className="relative shrink-0">
@@ -187,6 +198,7 @@ const SearchPanel: React.FC<Props> = ({
                                         {renderToggleItem(t('show_nikud'), <span className="font-bold text-lg leading-none w-[18px] text-center">אְ</span>, readerStyle.showNikud, () => onStyleChange({ ...readerStyle, showNikud: !readerStyle.showNikud }))}
                                         {renderToggleItem(t('show_verses'), <Hash size={18} />, readerStyle.showVerseNumbers, () => onStyleChange({ ...readerStyle, showVerseNumbers: !readerStyle.showVerseNumbers }))}
                                         {renderToggleItem(t('show_chapter_headers'), <LayoutList size={18} />, readerStyle.showChapterHeaders, () => onStyleChange({ ...readerStyle, showChapterHeaders: !readerStyle.showChapterHeaders }))}
+                                        {renderToggleItem('תצוגת רצף', <AlignJustify size={18} />, readerStyle.isContinuous, () => onStyleChange({ ...readerStyle, isContinuous: !readerStyle.isContinuous }))}
                                     </>
                                 )}
                             </div>
@@ -205,8 +217,8 @@ const SearchPanel: React.FC<Props> = ({
                             onFocus={() => { if (searchHistory.length > 0) setIsHistoryOpen(true); }}
                             placeholder={t('search_placeholder')}
                             className={`w-full h-11 px-9 rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-base ${isDarkMode
-                                ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
-                                : 'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400'
+                                    ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
+                                    : 'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400'
                                 } ${dir === 'rtl' ? 'text-right pl-20' : 'text-left pr-20'}`}
                         />
 
@@ -218,7 +230,7 @@ const SearchPanel: React.FC<Props> = ({
                             <History size={20} />
                         </button>
 
-                        {/* Clear Button (Conditionally shown, moved inward) */}
+                        {/* Clear Button */}
                         {searchQuery && (
                             <button
                                 onClick={() => { setSearchQuery(''); onSearch(false, ''); }}

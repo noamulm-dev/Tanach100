@@ -175,11 +175,11 @@ const SettingsModal: React.FC<Props> = ({
 
     // Update HSV when switching tabs/attributes
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && !isDraggingPalette) {
             const color = currentSettings[themeModeTab][activeAttribute];
             setHsv(hexToHsv(color));
         }
-    }, [themeModeTab, activeAttribute, currentSettings, isOpen]);
+    }, [themeModeTab, activeAttribute, currentSettings, isOpen, isDraggingPalette]);
 
     if (!isOpen) return null;
 
@@ -236,8 +236,8 @@ const SettingsModal: React.FC<Props> = ({
     };
 
     const attributes: { id: keyof ThemeColors, label: string }[] = [
-        { id: 'textMain', label: 'טקסט ראשי' },
         { id: 'bgPaper', label: 'רקע קריאה' },
+        { id: 'textMain', label: 'טקסט ראשי' },
         { id: 'bgMain', label: 'רקע כותרות' },
         { id: 'accent', label: 'הדגשות' },
         { id: 'textSecondary', label: 'משני' },
@@ -257,12 +257,12 @@ const SettingsModal: React.FC<Props> = ({
             <div className="fixed inset-0 bg-black/5 pointer-events-auto" onClick={handleBackdropClick} onMouseUp={() => setIsDraggingPalette(false)} onMouseMove={(e) => isDraggingPalette && handlePaletteMove(e.clientX, e.clientY)}></div>
 
             <div
-                className={`w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl border flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200 pointer-events-auto ${bodyBg} ${borderColor} z-50`}
+                className={`w-full sm:max-w-xs rounded-t-2xl sm:rounded-2xl shadow-2xl border flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200 pointer-events-auto ${bodyBg} ${borderColor} z-50`}
                 onClick={e => { e.preventDefault(); e.stopPropagation(); }}
                 onMouseDown={e => e.stopPropagation()}
                 dir={dir}
             >
-                {/* Header Container - Increased height */}
+                {/* Header Container - Compact Layout */}
                 <div className={`flex items-end justify-between px-2 pt-1 border-b ${borderColor} ${headerBg} shrink-0`}>
 
                     {/* Tabs */}
@@ -275,33 +275,45 @@ const SettingsModal: React.FC<Props> = ({
                         </button>
                     </div>
 
-                    {/* Actions - Larger buttons (p-3) */}
+                    {/* Actions */}
                     <div className="flex items-center gap-2 pb-2 px-2">
                         <button
                             onClick={handleConfirm}
                             onMouseDown={e => e.stopPropagation()}
-                            className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all shadow-sm"
+                            className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all shadow-sm"
                             title={t('confirm')}
                         >
-                            <Check size={22} strokeWidth={3} />
+                            <Check size={20} strokeWidth={3} />
                         </button>
                         <button
                             onClick={handleCancel}
                             onMouseDown={e => e.stopPropagation()}
-                            className={`p-3 rounded-xl transition-all active:scale-95 ${isDarkMode ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`}
+                            className={`p-2 rounded-xl transition-all active:scale-95 ${isDarkMode ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`}
                             title={t('label_cancel')}
                         >
-                            <X size={22} />
+                            <X size={20} />
                         </button>
                     </div>
                 </div>
 
                 {/* Content Body */}
-                <div className={`p-3 overflow-y-auto custom-scrollbar h-[240px] ${textColor}`}>
+                <div className={`p-3 overflow-y-auto custom-scrollbar h-[250px] ${textColor}`}>
                     {activeTab === 'typography' ? (
                         <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300 h-full flex flex-col">
-                            {/* Steppers */}
-                            <div className="grid grid-cols-3 gap-2 h-12 shrink-0 mb-3">
+
+                            {/* View Toggle (Continuous/Block) - Moved to top */}
+                            <div className="flex items-center justify-between px-2 py-1.5 rounded-lg border border-transparent bg-black/5 dark:bg-white/5">
+                                <span className="text-xs font-bold">תצוגת רצף (ללא פסקאות)</span>
+                                <div
+                                    className={`w-10 h-5 rounded-full p-0.5 cursor-pointer transition-colors duration-200 ${currentStyle.isContinuous ? 'bg-indigo-500' : (isDarkMode ? 'bg-slate-600' : 'bg-slate-300')}`}
+                                    onClick={() => onStyleChange({ ...currentStyle, isContinuous: !currentStyle.isContinuous })}
+                                >
+                                    <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${currentStyle.isContinuous ? 'translate-x-0' : (dir === 'rtl' ? '-translate-x-5' : 'translate-x-5')}`}></div>
+                                </div>
+                            </div>
+
+                            {/* Steppers Row */}
+                            <div className="grid grid-cols-3 gap-2 h-12 shrink-0">
                                 {renderCompactStepper(
                                     <Type size={10} />,
                                     t('size'),
@@ -325,21 +337,22 @@ const SettingsModal: React.FC<Props> = ({
                                 )}
                             </div>
 
-                            {/* Font Grid - Label Removed, Text increased to 16px */}
+                            <div className={`h-px w-full ${isDarkMode ? 'bg-white/10' : 'bg-black/5'}`}></div>
+
+                            {/* Font Grid */}
                             <div className="flex-1 overflow-y-auto no-scrollbar">
-                                <div className="grid grid-cols-5 gap-1">
+                                <div className="grid grid-cols-4 gap-1.5">
                                     {FONT_OPTIONS.map(font => (
                                         <button
                                             key={font.id}
                                             onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
+                                                e.preventDefault(); e.stopPropagation();
                                                 onStyleChange({ ...currentStyle, fontFamily: font.id });
                                             }}
                                             onMouseDown={(e) => e.stopPropagation()}
-                                            className={`h-8 px-0.5 rounded-lg border text-[16px] font-bold flex items-center justify-center text-center transition-all leading-tight break-words ${currentStyle.fontFamily === font.id
-                                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-md ring-1 ring-indigo-200 dark:ring-indigo-900'
-                                                    : (isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50')
+                                            className={`h-8 px-0.5 rounded-lg border text-[14px] font-bold flex items-center justify-center text-center transition-all leading-tight break-words ${currentStyle.fontFamily === font.id
+                                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-md ring-1 ring-indigo-200 dark:ring-indigo-900'
+                                                : (isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50')
                                                 }`}
                                             style={{ fontFamily: font.id }}
                                             title={font.label}
@@ -384,8 +397,8 @@ const SettingsModal: React.FC<Props> = ({
                                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveAttribute(attr.id); }}
                                             onMouseDown={e => e.stopPropagation()}
                                             className={`flex flex-col items-center gap-1 p-1.5 rounded-lg border transition-all flex-1 min-w-0 ${isActive
-                                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-md scale-105'
-                                                    : (isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-white border-slate-200 text-slate-600')
+                                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-md scale-105'
+                                                : (isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-white border-slate-200 text-slate-600')
                                                 }`}
                                         >
                                             <span className="text-[10px] font-bold truncate w-full text-center">{attr.label}</span>

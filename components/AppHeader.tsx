@@ -181,11 +181,22 @@ const AppHeader: React.FC<Props> = ({
                     </>
                 ) : (
                     <div className="flex justify-between items-stretch w-full h-full">
-                        <div className="flex items-center gap-3 px-4">
-                            <Book className="text-indigo-600" size={24} strokeWidth={2.5} />
-                            <h1 className="text-xl font-black text-indigo-700 tracking-tight">
-                                {t('app_title')}
-                            </h1>
+                        <div className="flex flex-col items-center leading-none">
+                            {selectedBook && (
+                                <>
+                                    <span className="text-[20px] font-bold">{getBookName(selectedBook.id)}</span>
+                                    <span className={`text-[22px] opacity-75 ${hoveredVerse ? 'text-indigo-500 font-black' : ''}`}>
+                                        {language === 'he'
+                                            ? hoveredVerse
+                                                ? `${numberToHebrew(hoveredVerse.chapter)}:${numberToHebrew(hoveredVerse.verse)}`
+                                                : `${numberToHebrew(selectedChapter)}:${numberToHebrew(currentVerse)}`
+                                            : hoveredVerse
+                                                ? `${hoveredVerse.chapter}:${hoveredVerse.verse}`
+                                                : `${selectedChapter}:${currentVerse}`
+                                        }
+                                    </span>
+                                </>
+                            )}
                         </div>
 
                         <div className="flex items-stretch h-full">

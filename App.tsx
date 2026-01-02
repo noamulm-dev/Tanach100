@@ -77,6 +77,7 @@ const AppContent: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [searchProgress, setSearchProgress] = useState(0);
     const [currentResultIndex, setCurrentResultIndex] = useState(-1);
     const [searchWholeWord, setSearchWholeWord] = useState(false);
     const [searchScope, setSearchScope] = useState<'current' | 'torah' | 'tanakh'>('current');
@@ -264,11 +265,19 @@ const AppContent: React.FC = () => {
             setCurrentResultIndex(-1);
             setLastSearchTerm('');
             setIsSearching(false);
+            setSearchProgress(0);
             return;
         }
         setIsSearching(true);
+        setSearchProgress(0);
         try {
-            const { results, regularSearchEnabled } = await searchGlobal(effectiveQuery, searchWholeWord, searchScope, selectedBook?.id || '');
+            const { results, regularSearchEnabled } = await searchGlobal(
+                effectiveQuery,
+                searchWholeWord,
+                searchScope,
+                selectedBook?.id || '',
+                (percent) => setSearchProgress(percent)
+            );
             setIsRegularSearchActive(regularSearchEnabled);
 
             // Always update lastSearchTerm when search executes, so reader highlights match the executed search (or clear if empty)
@@ -398,8 +407,16 @@ const AppContent: React.FC = () => {
                 isOpen={isMenuOpen}
                 onClose={() => setIsMenuOpen(false)}
                 activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                isDarkMode={isDarkMode}
+                openSettingsModal={() => setIsSettingsOpen(true)}
+                openThemeModal={() => setIsSettingsOpen(true)}
+                isSynced={isSynced}
+                currentParasha={currentParasha}
+                onJumpToParasha={handleJumpToParasha}
+                onOpenDevPage={() => setIsDevPageOpen(true)}
+                onToggleTTS={() => setIsTTSPanelOpen(!isTTSPanelOpen)}
                 onOpenLegacyMatrix={() => { }} // Removed legacy support
-                onOpenSettings={() => setIsSettingsOpen(true)}
                 onOpenSimulation={() => setIsSimulationOpen(true)}
             />
 
@@ -452,7 +469,25 @@ const AppContent: React.FC = () => {
                 {renderContent()}
             </main>
 
-            <SearchPanel searchQuery={searchQuery} setSearchQuery={setSearchQuery} onSearch={executeSearch} searchResults={searchResults} currentResultIndex={currentResultIndex} onPrevious={() => { if (searchResults.length > 0) { const prevIndex = (currentResultIndex - 1 + searchResults.length) % searchResults.length; setCurrentResultIndex(prevIndex); scrollToResult(searchResults[prevIndex]); } }} isSearching={isSearching} isExpanded={isSearchPanelExpanded} toggleExpanded={() => setIsSearchPanelExpanded(!isSearchPanelExpanded)} searchWholeWord={searchWholeWord} setSearchWholeWord={setSearchWholeWord} searchScope={searchScope} setSearchScope={setSearchScope} isDarkMode={isDarkMode} readerStyle={readerStyle} onStyleChange={setReaderStyle} />
+            <SearchPanel
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                onSearch={executeSearch}
+                searchResults={searchResults}
+                currentResultIndex={currentResultIndex}
+                onPrevious={() => { if (searchResults.length > 0) { const prevIndex = (currentResultIndex - 1 + searchResults.length) % searchResults.length; setCurrentResultIndex(prevIndex); scrollToResult(searchResults[prevIndex]); } }}
+                isSearching={isSearching}
+                searchProgress={searchProgress}
+                isExpanded={isSearchPanelExpanded}
+                toggleExpanded={() => setIsSearchPanelExpanded(!isSearchPanelExpanded)}
+                searchWholeWord={searchWholeWord}
+                setSearchWholeWord={setSearchWholeWord}
+                searchScope={searchScope}
+                setSearchScope={setSearchScope}
+                isDarkMode={isDarkMode}
+                readerStyle={readerStyle}
+                onStyleChange={setReaderStyle}
+            />
         </div>
     );
 };

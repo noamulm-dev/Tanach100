@@ -447,20 +447,31 @@ const BibleReader = forwardRef<BibleReaderHandle, Props>(({
 
             {/* Context Menu */}
             {contextMenu && (
-                <VerseContextMenu
-                    x={contextMenu.x}
-                    y={contextMenu.y}
-                    verse={contextMenu.verse}
-                    selectedText={contextMenu.selectedText}
+                <ReaderContextMenu
+                    contextMenu={contextMenu}
+                    menuView={menuView}
+                    setMenuView={setMenuView}
                     onClose={() => setContextMenu(null)}
-                    onAddNote={() => { if (onAddNote) onAddNote(contextMenu.verse); setContextMenu(null); }}
-                    onAddBookmark={() => { if (onAddBookmark) onAddBookmark(contextMenu.verse); setContextMenu(null); }}
+                    onGematria={() => {
+                        const textToCalc = contextMenu?.selectedText ? contextMenu.selectedText : contextMenu!.verse.text;
+                        onNavigateToGematria?.(textToCalc);
+                        setContextMenu(null);
+                    }}
+                    onCommentary={() => setMenuView('commentary')}
                     onCopy={() => { navigator.clipboard.writeText(contextMenu.selectedText || contextMenu.verse.text); setContextMenu(null); }}
-                    onShare={() => { handleShareImage(); setContextMenu(null); }}
+                    onShare={() => setContextMenu(null)}
+                    onShareImage={handleShareImage}
+                    onNote={() => { onAddNote(selectedBook.id, contextMenu!.verse.chapter, contextMenu!.verse.verse); setContextMenu(null); }}
+                    onBookmark={() => { onAddBookmark(selectedBook.id, contextMenu!.verse.chapter, contextMenu!.verse.verse); setContextMenu(null); }}
+                    onSearch={(text) => { onSearchRequest?.(text); setContextMenu(null); }}
+                    selectedText={contextMenu.selectedText}
+                    dir={dir}
                     isDarkMode={isDarkMode}
+                    availableCommentators={availableCommentators}
+                    isLoadingCommentaries={isLoadingCommentaries}
+                    onOpenCommentary={(prefix) => { console.log('Open commentary', prefix); }}
                 />
-            )}
-        </div>
+            )}   </div>
     );
 });
 

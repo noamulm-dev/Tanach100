@@ -22,7 +22,11 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
         s25ultra: { w: 412, h: 920, label: 'Samsung S25 Ultra' }, // Futuristic high-end
         iphone15pro: { w: 430, h: 932, label: 'iPhone 15 Pro Max' },
         pixel8pro: { w: 412, h: 915, label: 'Pixel 8 Pro' },
-        iphonese: { w: 375, h: 667, label: 'iPhone SE' }
+        iphonese: { w: 375, h: 667, label: 'iPhone SE' },
+        iphone12mini: { w: 360, h: 780, label: 'iPhone 12 Mini' },
+        iphone12: { w: 390, h: 844, label: 'iPhone 12' },
+        iphone14: { w: 390, h: 844, label: 'iPhone 14' },
+        iphone14plus: { w: 428, h: 926, label: 'iPhone 14 Plus' }
     };
 
     const devices = {
@@ -66,13 +70,13 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
 
     const handleFit = () => {
         if (containerRef.current) {
-            const containerW = containerRef.current.clientWidth - 80; // padding
-            const containerH = containerRef.current.clientHeight - 80;
+            const containerW = containerRef.current.clientWidth; // No padding for max fit
+            const containerH = containerRef.current.clientHeight;
             const deviceW = width + (activeDevice === 'mobile' ? 24 : activeDevice === 'tablet' ? 24 : 24); // frame approx
             const deviceH = height + (activeDevice === 'mobile' ? 24 : activeDevice === 'tablet' ? 24 : 32);
 
             const scale = Math.min(containerW / deviceW, containerH / deviceH);
-            setZoom(Math.min(scale, 1.5)); // Don't zoom in crazy amounts if space is huge
+            setZoom(scale); // Allow full fit without cap
         }
     };
 
@@ -105,7 +109,7 @@ const SimulationMode: React.FC<Props> = ({ onClose, isDarkMode }) => {
                 <div className={`h-px w-10 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-200'}`}></div>
 
                 {/* Device Type Icons */}
-                <div className="flex flex-col gap-3 w-full px-2 overflow-y-auto custom-scrollbar flex-1 items-center">
+                <div className="flex flex-col gap-3 w-full px-2 flex-1 items-center overflow-visible">
 
                     <button
                         onClick={() => setActiveDevice('mobile')}
